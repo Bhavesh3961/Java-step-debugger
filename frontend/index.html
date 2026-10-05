@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Java Step Debugger & Execution Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <span class="nav-icon">☕</span>
+        <span class="nav-title">Java Step Debugger</span>
+      </div>
+      <div class="nav-actions">
+        <label for="exampleSelect" class="label-muted">Examples:</label>
+        <select id="exampleSelect" class="select-dropdown">
+          <option value="while_loop">While Loop (Screenshot)</option>
+          <option value="diamond_pattern">Diamond Pattern (Scanner Input)</option>
+          <option value="array_sum">For Loop & Array Sum</option>
+          <option value="array_list">ArrayList & Collections</option>
+          <option value="factorial_recursion">Factorial (Recursion)</option>
+          <option value="bubble_sort">Bubble Sort</option>
+          <option value="custom_object">Custom Class & Objects</option>
+        </select>
+        <button id="toggleEditBtn" class="btn btn-secondary">
+          <span class="btn-icon">✏️</span> Edit Code
+        </button>
+        <a href="about.html" class="btn btn-secondary" style="text-decoration:none;">
+          <span class="btn-icon">ℹ️</span> About
+        </a>
+        <button id="runCodeBtn" class="btn btn-primary-accent">
+          <span class="btn-icon">▶</span> Visualize Execution
+        </button>
+      </div>
+    </header>
+
+    <!-- Editor Drawer (Expandable / Collapsible) -->
+    <section id="editorSection" class="editor-section hidden">
+      <div class="editor-header">
+        <div class="editor-title">
+          <span>Java Source Code</span>
+          <span class="tag-badge">Java 21 • Standard Libraries Included</span>
+        </div>
+        <div class="editor-actions">
+          <button id="closeEditorBtn" class="btn-close" title="Close Editor">✕</button>
+        </div>
+      </div>
+      <div class="editor-body">
+        <textarea id="codeEditor" spellcheck="false" placeholder="Paste or write your Java code here..."></textarea>
+      </div>
+      <div class="editor-input-bar">
+        <label for="stdinInput" class="stdin-label">⌨️ Program Input (stdin):</label>
+        <input type="text" id="stdinInput" class="stdin-input" placeholder="e.g. 3 (values for Scanner / System.in)" value="3">
+      </div>
+      <div class="editor-footer">
+        <span class="editor-hint">💡 Tip: Collections, Math, Scanner/IO, and standard libraries are fully supported.</span>
+        <button id="runFromEditorBtn" class="btn btn-primary-accent">
+          <span>Run Debugger</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="error-banner hidden">
+      <div class="error-header">
+        <span class="error-icon">⚠️</span>
+        <span id="errorMessage" class="error-text">Compilation Error</span>
+      </div>
+      <pre id="errorDetails" class="error-details"></pre>
+    </div>
+
+    <!-- Visualizer Workspace (Exact Layout from Screenshots) -->
+    <main class="visualizer-main">
+      <!-- Top Row: Code Panel (Left) & Variables Table (Right) -->
+      <div class="top-row">
+        <!-- Code Display Box with Dashed Border -->
+        <div class="code-container-wrapper">
+          <div class="code-container" id="codeContainer">
+            <!-- Code Lines Rendered Dynamically -->
+            <div id="codeLines" class="code-lines"></div>
+          </div>
+        </div>
+
+        <!-- Variables / Call Frame Card -->
+        <div class="variables-card" id="variablesCard">
+          <div class="variables-header">
+            <div class="frame-tag" id="currentFrameTag">main:5</div>
+            <div class="vars-columns">
+              <span class="col-name">Name</span>
+              <span class="col-value">Value</span>
+            </div>
+          </div>
+          <div class="variables-body" id="variablesBody">
+            <!-- Variable rows rendered dynamically -->
+            <div class="var-row">
+              <span class="var-name">number</span>
+              <span class="var-value">1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call Stack History (when multiple frames exist) -->
+      <div id="callStackContainer" class="call-stack-container hidden">
+        <span class="call-stack-label">Call Stack:</span>
+        <div id="callStackChips" class="call-stack-chips"></div>
+      </div>
+
+      <!-- Output Panel with Solid Blue Header Bar -->
+      <section class="output-section">
+        <div class="output-header">
+          <span>Output</span>
+        </div>
+        <div class="output-terminal" id="terminalOutput"></div>
+      </section>
+
+      <!-- Scrubber Track & Playback Navigation -->
+      <section class="controls-section">
+        <!-- Interactive Range Slider -->
+        <div class="slider-wrapper">
+          <input type="range" id="stepSlider" class="step-slider" min="1" max="1" value="1" step="1">
+        </div>
+
+        <!-- Navigation Buttons & Step Indicator -->
+        <div class="buttons-row">
+          <button id="prevBtn" class="btn btn-step" title="Previous Step (Left Arrow)">
+            Prev
+          </button>
+          
+          <div class="step-counter-wrapper">
+            <span id="stepCounter" class="step-counter">1 / 1</span>
+            <button id="autoPlayBtn" class="btn-play-pause" title="Auto Play / Pause">
+              <span id="playIcon">⏵</span>
+            </button>
+          </div>
+
+          <button id="nextBtn" class="btn btn-step" title="Next Step (Right Arrow)">
+            Next
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer shortcut hint -->
+    <footer class="app-footer">
+      <span>Use <kbd>←</kbd> and <kbd>→</kbd> arrow keys to step forward & backward • <kbd>Space</kbd> to toggle playback</span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

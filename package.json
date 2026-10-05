@@ -1,0 +1,12 @@
+{
+  "name": "java-step-debugger",
+  "version": "1.0.0",
+  "description": "Interactive Java Execution Visualizer & Step Debugger",
+  "scripts": {
+    "start": "python3 backend/server.py",
+    "build": "echo 'Frontend static build ready'"
+  },
+  "keywords": ["java", "debugger", "visualizer", "jdi", "execution-trace", "education"],
+  "author": "Bhavesh3961",
+  "license": "MIT"
+}

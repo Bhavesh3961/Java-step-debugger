@@ -1,0 +1,17 @@
+# Java class files
+*.class
+*.jar
+
+# Python cache & temp
+__pycache__/
+*.py[cod]
+*$py.class
+jdbg_*/
+
+# OS & Editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Vercel
+.vercel
