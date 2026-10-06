@@ -190,6 +190,7 @@ class DebuggerApp {
 
     // 4. Load default (while_loop)
     const defaultKey = 'while_loop';
+    this.exampleSelectEl.value = defaultKey;
     const defaultEx  = this.examples[defaultKey];
     const defaultCode = defaultEx
       ? defaultEx.code
@@ -244,55 +245,76 @@ class DebuggerApp {
     this.pauseAutoPlay();
     this.clearError();
 
-    // Check if there's a backend available
-    if (BACKEND_URL === null) {
-      // We're on Vercel with no backend configured — show helpful message
-      this.showError(
-        'Backend Required for Custom Code',
-        '⚠️ This site is hosted on Vercel (static only). To run custom Java code:\n\n' +
-        '  1. Clone the repo: git clone https://github.com/Bhavesh3961/Java-step-debugger\n' +
-        '  2. Run locally:   ./run.sh\n' +
-        '  3. Open:          http://localhost:3000\n\n' +
-        'The built-in examples above work without any backend — try them! ☕'
-      );
-      return;
-    }
-
-    this.setLoadingState(true);
-
     const stdinValue = stdin !== undefined ? stdin :
       (this.stdinInputEl && this.stdinInputEl.value ? this.stdinInputEl.value : '');
 
-    const apiBase = BACKEND_URL || '';
-
-    try {
-      const resp = await fetch(`${apiBase}/api/trace`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, stdin: stdinValue })
-      });
-
-      let data;
-      try {
-        data = await resp.json();
-      } catch (jsonErr) {
-        const text = await resp.text().catch(() => resp.statusText);
-        throw new Error(`Server returned non-JSON response: ${text.slice(0, 120)}`);
-      }
-
-      this.setLoadingState(false);
-
-      if (!data.success) {
-        this.showError(data.message || 'Execution Error', data.error || 'Failed to trace code.');
+    // 1. Check if the code matches one of our pre-computed embedded traces
+    const cleanInputCode = code.trim().replace(/\r\n/g, '\n');
+    for (const [key, tr] of Object.entries(this.embeddedTraces)) {
+      const cleanTraceCode = (tr.code || '').trim().replace(/\r\n/g, '\n');
+      if (cleanInputCode === cleanTraceCode) {
+        this.applyTrace(code, tr);
         return;
       }
-
-      this.applyTrace(code, data);
-
-    } catch (err) {
-      this.setLoadingState(false);
-      this.showError('Connection Error', err.message);
     }
+
+    // 2. If running locally with live backend, try the JDI server first
+    if (IS_LOCAL) {
+      this.setLoadingState(true);
+      try {
+        const resp = await fetch('/api/trace', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, stdin: stdinValue })
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          this.setLoadingState(false);
+          if (data.success && data.steps && data.steps.length > 0) {
+            this.applyTrace(code, data);
+            return;
+          } else if (!data.success) {
+            this.showError(data.message || 'Compilation Error', data.error || 'Failed to trace code.');
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Local JDI backend unavailable, falling back to simulator:', err);
+      }
+      this.setLoadingState(false);
+    }
+
+    // 3. Client-side Java Simulator Engine (Vercel & static host execution)
+    if (typeof JavaSimulator !== 'undefined') {
+      this.setLoadingState(true);
+      try {
+        const sim = new JavaSimulator();
+        const result = sim.simulate(code, stdinValue);
+        this.setLoadingState(false);
+
+        if (result.success && result.steps && result.steps.length > 0) {
+          this.applyTrace(code, result);
+          return;
+        } else if (!result.success) {
+          this.showError('Execution Error', result.error || 'Failed to simulate Java execution.');
+          return;
+        } else {
+          this.showError('No Steps Recorded', 'Program terminated without hitting traceable execution lines.');
+          return;
+        }
+      } catch (simErr) {
+        this.setLoadingState(false);
+        this.showError('Simulation Error', simErr.message);
+        return;
+      }
+    }
+
+    // 4. Fallback if simulator not loaded
+    this.showError(
+      'Execution Error',
+      'Java execution engine is loading. Please refresh the page and try again.'
+    );
   }
 
   // -------------------------------------------------------------------------

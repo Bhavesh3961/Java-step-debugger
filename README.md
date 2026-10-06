@@ -1,9 +1,15 @@
+<div align="center">
+  <img src="assets/banner.png" alt="Java Step Debugger Banner" width="100%">
+</div>
+
 # ☕ Java Step Debugger & Execution Visualizer
 
 [![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange.svg)](https://www.oracle.com/java/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Vercel Ready](https://img.shields.io/badge/Vercel-Deployment%20Ready-black.svg)](https://vercel.com/)
-[![Built with JDI](https://img.shields.io/badge/Engine-JDK%20JDI-blueviolet.svg)](https://docs.oracle.com/en/java/javase/21/docs/api/jdk.jdi/module-summary.html)
+[![Vercel Ready](https://img.shields.io/badge/Vercel-Live%20Demo-black.svg)](https://forbegginers.vercel.app/)
+[![Built with JDI](https://img.shields.io/badge/Engine-JDK%20JDI%20%2B%20Browser%20VM-blueviolet.svg)](https://docs.oracle.com/en/java/javase/21/docs/api/jdk.jdi/module-summary.html)
+
+> **🌐 Live Demo on Vercel:** [https://forbegginers.vercel.app/](https://forbegginers.vercel.app/)
 
 An interactive, browser-based Java execution visualizer that allows you to paste or write Java code, step through its execution line-by-line, inspect variable values, trace call stack frames, and view real-time standard output.
 
