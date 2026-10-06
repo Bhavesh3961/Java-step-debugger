@@ -1,5 +1,13 @@
 {
   "version": 2,
   "outputDirectory": "frontend",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "/embedded_traces.json",
+      "dest": "/embedded_traces.json",
+      "headers": { "Cache-Control": "public, max-age=3600" }
+    },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }

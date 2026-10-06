@@ -1,7 +1,27 @@
 // ==========================================================================
 // Java Step Debugger - Frontend Application
+// Vercel-compatible: examples use embedded pre-computed traces.
+// Custom code: calls backend (localhost in dev, or BACKEND_URL in prod).
 // ==========================================================================
 
+// ---------------------------------------------------------------------------
+// Backend URL config
+// On Vercel the frontend is static — backend must be hosted separately.
+// Set window.BACKEND_URL in a <script> tag or environment to override.
+// ---------------------------------------------------------------------------
+const IS_LOCAL = (
+  location.hostname === 'localhost' ||
+  location.hostname === '127.0.0.1' ||
+  location.hostname === ''
+);
+
+const BACKEND_URL = (typeof window.BACKEND_URL !== 'undefined' && window.BACKEND_URL)
+  ? window.BACKEND_URL
+  : (IS_LOCAL ? '' : null);   // null = no backend available on Vercel
+
+// ---------------------------------------------------------------------------
+// Java Syntax Highlighting sets
+// ---------------------------------------------------------------------------
 const JAVA_KEYWORDS = new Set([
   'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char',
   'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum',
@@ -19,6 +39,9 @@ const JAVA_BUILTIN_TYPES = new Set([
   'Scanner', 'PrintStream', 'StringBuilder', 'StringBuffer', 'Exception'
 ]);
 
+// ---------------------------------------------------------------------------
+// Main App Class
+// ---------------------------------------------------------------------------
 class DebuggerApp {
   constructor() {
     this.steps = [];
@@ -26,47 +49,49 @@ class DebuggerApp {
     this.sourceCode = '';
     this.isPlaying = false;
     this.playInterval = null;
-    this.examples = {};
+    this.examples = {};          // { key: {title, code, defaultStdin} }
+    this.embeddedTraces = {};    // pre-computed traces loaded from JSON
 
     this.initDOMElements();
     this.bindEvents();
     this.loadInitialData();
   }
 
+  // -------------------------------------------------------------------------
   initDOMElements() {
-    this.codeLinesEl = document.getElementById('codeLines');
-    this.codeContainerEl = document.getElementById('codeContainer');
-    this.currentFrameTagEl = document.getElementById('currentFrameTag');
-    this.variablesBodyEl = document.getElementById('variablesBody');
+    this.codeLinesEl          = document.getElementById('codeLines');
+    this.codeContainerEl      = document.getElementById('codeContainer');
+    this.currentFrameTagEl    = document.getElementById('currentFrameTag');
+    this.variablesBodyEl      = document.getElementById('variablesBody');
     this.callStackContainerEl = document.getElementById('callStackContainer');
-    this.callStackChipsEl = document.getElementById('callStackChips');
-    this.terminalOutputEl = document.getElementById('terminalOutput');
-    this.stepSliderEl = document.getElementById('stepSlider');
-    this.stepCounterEl = document.getElementById('stepCounter');
-    this.prevBtn = document.getElementById('prevBtn');
-    this.nextBtn = document.getElementById('nextBtn');
-    this.autoPlayBtn = document.getElementById('autoPlayBtn');
-    this.playIconEl = document.getElementById('playIcon');
-    this.toggleEditBtn = document.getElementById('toggleEditBtn');
-    this.runCodeBtn = document.getElementById('runCodeBtn');
-    this.editorSectionEl = document.getElementById('editorSection');
-    this.codeEditorEl = document.getElementById('codeEditor');
-    this.closeEditorBtn = document.getElementById('closeEditorBtn');
-    this.runFromEditorBtn = document.getElementById('runFromEditorBtn');
-    this.exampleSelectEl = document.getElementById('exampleSelect');
-    this.errorBannerEl = document.getElementById('errorBanner');
-    this.errorMessageEl = document.getElementById('errorMessage');
-    this.errorDetailsEl = document.getElementById('errorDetails');
-    this.stdinInputEl = document.getElementById('stdinInput');
+    this.callStackChipsEl     = document.getElementById('callStackChips');
+    this.terminalOutputEl     = document.getElementById('terminalOutput');
+    this.stepSliderEl         = document.getElementById('stepSlider');
+    this.stepCounterEl        = document.getElementById('stepCounter');
+    this.prevBtn              = document.getElementById('prevBtn');
+    this.nextBtn              = document.getElementById('nextBtn');
+    this.autoPlayBtn          = document.getElementById('autoPlayBtn');
+    this.playIconEl           = document.getElementById('playIcon');
+    this.toggleEditBtn        = document.getElementById('toggleEditBtn');
+    this.runCodeBtn           = document.getElementById('runCodeBtn');
+    this.editorSectionEl      = document.getElementById('editorSection');
+    this.codeEditorEl         = document.getElementById('codeEditor');
+    this.closeEditorBtn       = document.getElementById('closeEditorBtn');
+    this.runFromEditorBtn     = document.getElementById('runFromEditorBtn');
+    this.exampleSelectEl      = document.getElementById('exampleSelect');
+    this.errorBannerEl        = document.getElementById('errorBanner');
+    this.errorMessageEl       = document.getElementById('errorMessage');
+    this.errorDetailsEl       = document.getElementById('errorDetails');
+    this.stdinInputEl         = document.getElementById('stdinInput');
   }
 
+  // -------------------------------------------------------------------------
   bindEvents() {
     this.prevBtn.addEventListener('click', () => this.stepPrev());
     this.nextBtn.addEventListener('click', () => this.stepNext());
 
     this.stepSliderEl.addEventListener('input', (e) => {
-      const stepIdx = parseInt(e.target.value, 10) - 1;
-      this.goToStep(stepIdx);
+      this.goToStep(parseInt(e.target.value, 10) - 1);
     });
 
     this.autoPlayBtn.addEventListener('click', () => this.toggleAutoPlay());
@@ -93,73 +118,168 @@ class DebuggerApp {
 
     this.exampleSelectEl.addEventListener('change', (e) => {
       const key = e.target.value;
-      if (this.examples[key]) {
-        this.codeEditorEl.value = this.examples[key].code;
-        this.executeCode(this.examples[key].code);
+      if (!key) return;
+
+      const ex = this.examples[key];
+      if (!ex) return;
+
+      this.codeEditorEl.value = ex.code;
+      if (this.stdinInputEl) {
+        this.stdinInputEl.value = ex.defaultStdin || '';
+      }
+
+      // Use embedded trace if available (works on Vercel without backend)
+      if (this.embeddedTraces[key]) {
+        this.applyTrace(ex.code, this.embeddedTraces[key]);
+      } else {
+        this.executeCode(ex.code, ex.defaultStdin || '');
       }
     });
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts (don't fire inside text inputs)
     window.addEventListener('keydown', (e) => {
-      // Don't intercept when user is typing in textarea or inputs
-      if (['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName)) {
-        return;
-      }
+      if (['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
 
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        this.stepPrev();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        this.stepNext();
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        this.toggleAutoPlay();
-      }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); this.stepPrev(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); this.stepNext(); }
+      else if (e.key === ' ')     { e.preventDefault(); this.toggleAutoPlay(); }
     });
   }
 
+  // -------------------------------------------------------------------------
   async loadInitialData() {
+    // 1. Load pre-computed embedded traces (works on Vercel — pure static file)
     try {
-      const resp = await fetch('/api/examples');
+      const resp = await fetch('embedded_traces.json');
       if (resp.ok) {
-        this.examples = await resp.json();
+        this.embeddedTraces = await resp.json();
+
+        // Build examples map from embedded traces
+        for (const [key, tr] of Object.entries(this.embeddedTraces)) {
+          this.examples[key] = {
+            title: tr.title,
+            code: tr.code,
+            defaultStdin: tr.defaultStdin || ''
+          };
+        }
       }
     } catch (e) {
-      console.warn('Could not fetch examples list from server:', e);
+      console.warn('Could not load embedded_traces.json:', e);
     }
 
-    // Default screenshot code
-    const initialCode = (this.examples['while_loop'] && this.examples['while_loop'].code) ||
-`public class Example {
-    public static void main(String[] args) {
-        int number = 1;
-
-        while (number < 6) {
-            System.out.println(number);
-            number++;
+    // 2. Also try live /api/examples (for local dev with server running)
+    if (IS_LOCAL) {
+      try {
+        const resp = await fetch('/api/examples');
+        if (resp.ok) {
+          const liveEx = await resp.json();
+          // Merge live examples (they may have fresher code)
+          for (const [key, ex] of Object.entries(liveEx)) {
+            if (!this.examples[key]) {
+              this.examples[key] = { title: ex.title, code: ex.code, defaultStdin: '' };
+            }
+          }
         }
+      } catch (e) {
+        console.warn('Live /api/examples not available:', e);
+      }
     }
-}`;
 
-    this.codeEditorEl.value = initialCode;
-    this.executeCode(initialCode);
+    // 3. Populate the dropdown
+    this.populateExamplesDropdown();
+
+    // 4. Load default (while_loop)
+    const defaultKey = 'while_loop';
+    const defaultEx  = this.examples[defaultKey];
+    const defaultCode = defaultEx
+      ? defaultEx.code
+      : `public class Example {\n    public static void main(String[] args) {\n        int number = 1;\n\n        while (number < 6) {\n            System.out.println(number);\n            number++;\n        }\n    }\n}`;
+
+    this.codeEditorEl.value = defaultCode;
+
+    if (defaultEx && this.embeddedTraces[defaultKey]) {
+      this.applyTrace(defaultCode, this.embeddedTraces[defaultKey]);
+    } else {
+      this.executeCode(defaultCode, '');
+    }
   }
 
-  async executeCode(code) {
+  // -------------------------------------------------------------------------
+  populateExamplesDropdown() {
+    // Clear existing options except the first placeholder
+    while (this.exampleSelectEl.options.length > 1) {
+      this.exampleSelectEl.remove(1);
+    }
+
+    for (const [key, ex] of Object.entries(this.examples)) {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = ex.title;
+      this.exampleSelectEl.appendChild(opt);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Apply a pre-computed trace result directly (no network call)
+  applyTrace(code, traceData) {
     this.pauseAutoPlay();
     this.clearError();
+
+    this.sourceCode = code;
+    this.steps = traceData.steps || [];
+    this.renderCodeLines();
+
+    if (this.steps.length === 0) {
+      this.showError('No Steps Recorded', 'Program terminated without traceable execution lines.');
+      return;
+    }
+
+    this.stepSliderEl.min = '1';
+    this.stepSliderEl.max = String(this.steps.length);
+    this.goToStep(this.steps.length > 1 ? 1 : 0);
+  }
+
+  // -------------------------------------------------------------------------
+  async executeCode(code, stdin) {
+    this.pauseAutoPlay();
+    this.clearError();
+
+    // Check if there's a backend available
+    if (BACKEND_URL === null) {
+      // We're on Vercel with no backend configured — show helpful message
+      this.showError(
+        'Backend Required for Custom Code',
+        '⚠️ This site is hosted on Vercel (static only). To run custom Java code:\n\n' +
+        '  1. Clone the repo: git clone https://github.com/Bhavesh3961/Java-step-debugger\n' +
+        '  2. Run locally:   ./run.sh\n' +
+        '  3. Open:          http://localhost:3000\n\n' +
+        'The built-in examples above work without any backend — try them! ☕'
+      );
+      return;
+    }
+
     this.setLoadingState(true);
 
+    const stdinValue = stdin !== undefined ? stdin :
+      (this.stdinInputEl && this.stdinInputEl.value ? this.stdinInputEl.value : '');
+
+    const apiBase = BACKEND_URL || '';
+
     try {
-      const stdin = (this.stdinInputEl && this.stdinInputEl.value) ? this.stdinInputEl.value : '';
-      const resp = await fetch('/api/trace', {
+      const resp = await fetch(`${apiBase}/api/trace`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, stdin })
+        body: JSON.stringify({ code, stdin: stdinValue })
       });
 
-      const data = await resp.json();
+      let data;
+      try {
+        data = await resp.json();
+      } catch (jsonErr) {
+        const text = await resp.text().catch(() => resp.statusText);
+        throw new Error(`Server returned non-JSON response: ${text.slice(0, 120)}`);
+      }
+
       this.setLoadingState(false);
 
       if (!data.success) {
@@ -167,21 +287,7 @@ class DebuggerApp {
         return;
       }
 
-      this.sourceCode = code;
-      this.steps = data.steps || [];
-      this.renderCodeLines();
-
-      if (this.steps.length === 0) {
-        this.showError('No Steps Recorded', 'Program terminated without hitting traceable execution lines.');
-        return;
-      }
-
-      this.stepSliderEl.min = '1';
-      this.stepSliderEl.max = String(this.steps.length);
-
-      // Start at step 2 if available (like the screenshot), or step 1
-      const startStep = this.steps.length > 1 ? 1 : 0;
-      this.goToStep(startStep);
+      this.applyTrace(code, data);
 
     } catch (err) {
       this.setLoadingState(false);
@@ -189,6 +295,7 @@ class DebuggerApp {
     }
   }
 
+  // -------------------------------------------------------------------------
   setLoadingState(loading) {
     if (loading) {
       this.runCodeBtn.disabled = true;
@@ -213,6 +320,7 @@ class DebuggerApp {
     this.errorDetailsEl.textContent = '';
   }
 
+  // -------------------------------------------------------------------------
   renderCodeLines() {
     this.codeLinesEl.innerHTML = '';
     const lines = this.sourceCode.split('\n');
@@ -223,7 +331,6 @@ class DebuggerApp {
       lineRow.className = 'code-line';
       lineRow.id = `code-line-${lineNum}`;
 
-      // Gutter with ▶ arrow and line number
       const gutter = document.createElement('div');
       gutter.className = 'line-gutter';
       gutter.innerHTML = `
@@ -231,7 +338,6 @@ class DebuggerApp {
         <span class="line-number">${lineNum}</span>
       `;
 
-      // Highlighted Code Content
       const content = document.createElement('div');
       content.className = 'code-content';
       content.innerHTML = this.highlightJava(lineText);
@@ -242,10 +348,10 @@ class DebuggerApp {
     });
   }
 
+  // -------------------------------------------------------------------------
   highlightJava(line) {
     if (!line) return '&nbsp;';
 
-    // Simple robust tokenizer for Java
     const tokenRegex = /(\/\/.*$|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?(?:[fFdDlL])?\b|[a-zA-Z_$][a-zA-Z0-9_$]*|[{}()\[\].,;+\-*/%&|^!=<>?:]+|\s+)/g;
 
     let highlighted = '';
@@ -282,6 +388,7 @@ class DebuggerApp {
       .replace(/'/g, '&#39;');
   }
 
+  // -------------------------------------------------------------------------
   goToStep(index) {
     if (index < 0 || index >= this.steps.length) return;
 
@@ -293,14 +400,12 @@ class DebuggerApp {
     const activeLineEl = document.getElementById(`code-line-${step.line}`);
     if (activeLineEl && this.codeContainerEl) {
       activeLineEl.classList.add('active');
-      // Scroll internally within code container only, keeping entire window steady
-      const container = this.codeContainerEl;
-      const cTop = container.scrollTop;
-      const cHeight = container.clientHeight;
-      const lTop = activeLineEl.offsetTop;
-      const lHeight = activeLineEl.offsetHeight;
+      const container  = this.codeContainerEl;
+      const cTop       = container.scrollTop;
+      const cHeight    = container.clientHeight;
+      const lTop       = activeLineEl.offsetTop;
+      const lHeight    = activeLineEl.offsetHeight;
 
-      // Keep active line within middle-comfort zone of the code container
       if (lTop < cTop + 40) {
         container.scrollTo({ top: Math.max(0, lTop - 40), behavior: 'smooth' });
       } else if (lTop + lHeight > cTop + cHeight - 40) {
@@ -308,10 +413,10 @@ class DebuggerApp {
       }
     }
 
-    // 2. Update frame tag: e.g. "main:5"
+    // 2. Frame tag
     this.currentFrameTagEl.textContent = step.frame || `line ${step.line}`;
 
-    // 3. Render Variables
+    // 3. Variables
     this.variablesBodyEl.innerHTML = '';
     if (step.variables && step.variables.length > 0) {
       step.variables.forEach(v => {
@@ -327,11 +432,11 @@ class DebuggerApp {
       this.variablesBodyEl.innerHTML = '<div class="no-vars">(no variables in scope)</div>';
     }
 
-    // 4. Update Call Stack if multiple frames
+    // 4. Call Stack
     if (step.callStack && step.callStack.length > 1) {
       this.callStackContainerEl.classList.remove('hidden');
       this.callStackChipsEl.innerHTML = '';
-      step.callStack.forEach((frame, idx) => {
+      step.callStack.forEach(frame => {
         const chip = document.createElement('span');
         chip.className = 'call-chip';
         chip.textContent = `${frame.method}:${frame.line}`;
@@ -341,25 +446,22 @@ class DebuggerApp {
       this.callStackContainerEl.classList.add('hidden');
     }
 
-    // 5. Update Output
+    // 5. Output
     this.terminalOutputEl.textContent = step.output || '';
     this.terminalOutputEl.scrollTop = this.terminalOutputEl.scrollHeight;
 
-    // 6. Update Slider
+    // 6. Slider + counter
     this.stepSliderEl.value = String(index + 1);
-
-    // 7. Update Step Counter: "2 / 24"
     this.stepCounterEl.textContent = `${index + 1} / ${this.steps.length}`;
 
-    // 8. Update Navigation Buttons state
+    // 7. Nav buttons
     this.prevBtn.disabled = (index === 0);
     this.nextBtn.disabled = (index === this.steps.length - 1);
   }
 
+  // -------------------------------------------------------------------------
   stepPrev() {
-    if (this.currentStep > 0) {
-      this.goToStep(this.currentStep - 1);
-    }
+    if (this.currentStep > 0) this.goToStep(this.currentStep - 1);
   }
 
   stepNext() {
@@ -371,35 +473,24 @@ class DebuggerApp {
   }
 
   toggleAutoPlay() {
-    if (this.isPlaying) {
-      this.pauseAutoPlay();
-    } else {
-      this.startAutoPlay();
-    }
+    this.isPlaying ? this.pauseAutoPlay() : this.startAutoPlay();
   }
 
   startAutoPlay() {
-    if (this.currentStep >= this.steps.length - 1) {
-      this.goToStep(0);
-    }
+    if (this.currentStep >= this.steps.length - 1) this.goToStep(0);
     this.isPlaying = true;
     this.playIconEl.textContent = '⏸';
-    this.playInterval = setInterval(() => {
-      this.stepNext();
-    }, 700);
+    this.playInterval = setInterval(() => this.stepNext(), 700);
   }
 
   pauseAutoPlay() {
     this.isPlaying = false;
     this.playIconEl.textContent = '⏵';
-    if (this.playInterval) {
-      clearInterval(this.playInterval);
-      this.playInterval = null;
-    }
+    if (this.playInterval) { clearInterval(this.playInterval); this.playInterval = null; }
   }
 }
 
-// Initialize on page load
+// ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   window.app = new DebuggerApp();
 });

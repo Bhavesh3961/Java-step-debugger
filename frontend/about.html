@@ -6,69 +6,113 @@
   <title>About - Java Step Debugger & Execution Visualizer</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .about-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 30px 24px 60px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
+    /* -------------------------------------------------------
+       About Page  –  Enhanced Visual Design
+    ------------------------------------------------------- */
+    .about-page {
+      background: var(--bg-app);
+      min-height: 100vh;
       font-family: var(--font-sans);
       color: var(--text-main);
     }
 
-    .about-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .btn-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background-color: #2b2f38;
-      color: #e5e7eb;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 14px;
-      border: 1px solid #3c4250;
-      transition: background-color 0.15s ease;
-    }
-
-    .btn-back:hover {
-      background-color: #373c47;
-    }
-
-    .hero-section {
+    /* ====== HERO ====== */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 72px 24px 64px;
       text-align: center;
+      background: linear-gradient(160deg, #0d1117 0%, #0f1724 40%, #111827 100%);
+    }
+
+    /* animated background grid */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(41,98,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(41,98,255,.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridMove {
+      0%   { background-position: 0 0, 0 0; }
+      100% { background-position: 40px 40px, 40px 40px; }
+    }
+
+    /* glowing orb */
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at center, rgba(41,98,255,.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
-      padding: 20px 0;
+      gap: 20px;
     }
 
-    .hero-icon {
-      font-size: 48px;
+    .hero-icon-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #1a3a8f, #2962ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      box-shadow: 0 0 40px rgba(41,98,255,.45), 0 0 0 1px rgba(255,255,255,.08);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(41,98,255,.45), 0 0 0 1px rgba(255,255,255,.08); }
+      50%       { box-shadow: 0 0 70px rgba(41,98,255,.65), 0 0 0 1px rgba(255,255,255,.12); }
     }
 
     .hero-title {
-      font-size: 32px;
+      font-size: clamp(26px, 4.5vw, 44px);
       font-weight: 800;
-      letter-spacing: -0.5px;
-      color: #ffffff;
+      letter-spacing: -1px;
+      line-height: 1.15;
+      color: #fff;
+      margin: 0;
     }
 
-    .hero-subtitle {
+    .hero-title span {
+      background: linear-gradient(90deg, #60a5fa, #a78bfa, #60a5fa);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+
+    @keyframes shimmer {
+      to { background-position: 200% center; }
+    }
+
+    .hero-sub {
       font-size: 17px;
-      color: var(--text-muted);
-      max-width: 650px;
-      line-height: 1.6;
+      color: #9ca3af;
+      max-width: 620px;
+      line-height: 1.65;
+      margin: 0;
     }
 
     .badge-row {
@@ -76,286 +120,482 @@
       gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-top: 6px;
     }
 
     .badge {
-      background-color: rgba(41, 98, 255, 0.15);
-      color: #93c5fd;
-      border: 1px solid rgba(41, 98, 255, 0.3);
-      padding: 4px 10px;
+      padding: 5px 13px;
       border-radius: 20px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: .3px;
+      border: 1px solid;
     }
 
-    .badge.green {
-      background-color: rgba(16, 185, 129, 0.15);
-      color: #6ee7b7;
-      border-color: rgba(16, 185, 129, 0.3);
+    .badge-blue   { background: rgba(41,98,255,.15);  color: #93c5fd; border-color: rgba(41,98,255,.35); }
+    .badge-green  { background: rgba(16,185,129,.15); color: #6ee7b7; border-color: rgba(16,185,129,.35); }
+    .badge-purple { background: rgba(168,85,247,.15); color: #d8b4fe; border-color: rgba(168,85,247,.35); }
+    .badge-amber  { background: rgba(245,158,11,.15); color: #fcd34d; border-color: rgba(245,158,11,.35); }
+
+    .hero-cta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
-    .badge.purple {
-      background-color: rgba(168, 85, 247, 0.15);
-      color: #d8b4fe;
-      border-color: rgba(168, 85, 247, 0.3);
-    }
-
-    .about-card {
-      background-color: var(--bg-panel);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .btn-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
       border-radius: 8px;
-      padding: 24px 28px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: all .2s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-hero-primary {
+      background: var(--color-blue-primary);
+      color: #fff;
+    }
+
+    .btn-hero-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(41,98,255,.4); }
+
+    .btn-hero-outline {
+      background: transparent;
+      color: #e5e7eb;
+      border: 1px solid #3c4250;
+    }
+
+    .btn-hero-outline:hover { background: #1f2330; transform: translateY(-1px); }
+
+    /* ====== CONTENT WRAPPER ====== */
+    .about-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 36px;
     }
 
-    .card-title {
+    /* ====== SECTION CARD ====== */
+    .section-card {
+      background: #1e212a;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px;
+      padding: 28px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* coloured left accent */
+    .section-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #2962ff, #7c3aed);
+      border-radius: 3px 0 0 3px;
+    }
+
+    .section-title {
       font-size: 20px;
-      font-weight: 700;
-      color: #ffffff;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 16px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .card-text {
+    .section-text {
       color: #d1d5db;
-      line-height: 1.7;
+      line-height: 1.75;
       font-size: 15px;
+      margin: 0;
     }
 
+    /* ====== FEATURES GRID ====== */
     .feature-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      margin-top: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
     }
 
-    .feature-item {
-      background-color: #121316;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      padding: 16px;
+    .feat {
+      background: #13161f;
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 10px;
+      padding: 18px 18px 16px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      transition: border-color .2s, transform .2s;
     }
 
-    .feature-icon {
-      font-size: 24px;
+    .feat:hover {
+      border-color: rgba(41,98,255,.4);
+      transform: translateY(-2px);
     }
 
-    .feature-name {
+    .feat-icon {
+      font-size: 26px;
+    }
+
+    .feat-name {
+      font-size: 14.5px;
       font-weight: 700;
-      font-size: 15px;
-      color: #ffffff;
+      color: #f3f4f6;
     }
 
-    .feature-desc {
-      font-size: 13.5px;
-      color: var(--text-muted);
-      line-height: 1.5;
+    .feat-desc {
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.55;
     }
 
+    /* ====== ARCHITECTURE FLOW ====== */
     .arch-flow {
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 12px;
-      background-color: #121316;
-      padding: 18px 20px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      margin-top: 6px;
-    }
-
-    .arch-box {
-      background-color: #1e222b;
-      border: 1px solid #3b4252;
-      border-radius: 6px;
-      padding: 10px 16px;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 600;
-      color: #93c5fd;
-      flex: 1;
-      min-width: 140px;
-    }
-
-    .arch-arrow {
-      color: var(--color-blue-primary);
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .kbd-table {
-      width: 100%;
-      border-collapse: collapse;
+      gap: 10px;
       margin-top: 8px;
     }
 
+    .arch-node {
+      flex: 1;
+      min-width: 120px;
+      background: #13161f;
+      border: 1px solid #2d3345;
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: center;
+      transition: border-color .2s;
+    }
+
+    .arch-node:hover { border-color: #2962ff; }
+
+    .arch-num {
+      font-size: 10px;
+      font-weight: 800;
+      color: #2962ff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .arch-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e5e7eb;
+      margin: 4px 0 2px;
+    }
+
+    .arch-sub {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .arch-arrow {
+      color: #2962ff;
+      font-size: 20px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    /* ====== KEYBOARD TABLE ====== */
+    .kbd-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
     .kbd-table th, .kbd-table td {
-      padding: 10px 14px;
+      padding: 11px 16px;
       text-align: left;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
     }
 
     .kbd-table th {
-      color: var(--text-muted);
-      font-weight: 600;
+      color: #6b7280;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
     }
 
-    .author-section {
+    .kbd-table td:first-child { font-family: var(--font-mono); }
+
+    /* ====== STATS ROW ====== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+
+    .stat-box {
+      background: #13161f;
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 10px;
+      padding: 20px 18px;
       text-align: center;
-      padding: 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
+    }
+
+    .stat-num {
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    /* ====== FOOTER ====== */
+    .about-footer {
+      text-align: center;
+      padding: 28px 24px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      color: #6b7280;
       font-size: 14px;
     }
 
-    .author-link {
+    .about-footer a {
       color: #60a5fa;
+      font-weight: 700;
       text-decoration: none;
-      font-weight: 600;
     }
 
-    .author-link:hover {
-      text-decoration: underline;
+    .about-footer a:hover { text-decoration: underline; }
+
+    /* ====== NAVBAR ====== */
+    .about-navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(18,19,22,.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      background: #1f2330;
+      color: #e5e7eb;
+      text-decoration: none;
+      border-radius: 7px;
+      font-weight: 600;
+      font-size: 13.5px;
+      border: 1px solid #3c4250;
+      transition: background .15s, transform .1s;
+    }
+
+    .btn-back:hover { background: #2b3045; transform: translateY(-1px); }
+
+    @media (max-width: 640px) {
+      .arch-flow { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); }
+      .hero { padding: 52px 18px 44px; }
     }
   </style>
 </head>
-<body>
-  <div class="about-container">
-    <!-- Header with Back Button -->
-    <header class="about-header">
-      <div class="nav-brand">
-        <span class="nav-icon">☕</span>
-        <span class="nav-title">Java Step Debugger</span>
-      </div>
-      <a href="index.html" class="btn-back">
-        <span>← Back to Visualizer</span>
-      </a>
-    </header>
+<body class="about-page">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="hero-icon">☕</div>
-      <h1 class="hero-title">Java Execution Visualizer & Step Debugger</h1>
-      <p class="hero-subtitle">
-        An interactive, browser-based Java execution visualizer that allows you to inspect variable tables, trace call stack frames, and watch program output evolve step by step.
+  <!-- Sticky Navbar -->
+  <nav class="about-navbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:22px;">☕</span>
+      <span style="font-weight:700;font-size:16px;color:#fff;">Java Step Debugger</span>
+    </div>
+    <a href="index.html" class="btn-back">← Back to Visualizer</a>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-icon-wrap">☕</div>
+      <h1 class="hero-title">
+        Java <span>Execution Visualizer</span><br>& Step Debugger
+      </h1>
+      <p class="hero-sub">
+        An interactive, browser-based Java debugger powered by the native JDK Debug Interface — paste any code, step through it line-by-line, and understand exactly how your program runs.
       </p>
       <div class="badge-row">
-        <span class="badge">JDK 21 LTS</span>
-        <span class="badge green">Native JDI Engine</span>
-        <span class="badge purple">All Libraries Included</span>
-        <span class="badge">Scanner / stdin Support</span>
-        <span class="badge green">Zero Dependencies</span>
+        <span class="badge badge-blue">JDK 21 LTS</span>
+        <span class="badge badge-green">Native JDI Engine</span>
+        <span class="badge badge-purple">All Libraries Included</span>
+        <span class="badge badge-amber">Scanner / stdin</span>
+        <span class="badge badge-green">Open Source</span>
       </div>
-    </section>
+      <div class="hero-cta">
+        <a href="index.html" class="btn-hero btn-hero-primary">▶ Open Visualizer</a>
+        <a href="https://github.com/Bhavesh3961/Java-step-debugger" target="_blank" class="btn-hero btn-hero-outline">⭐ Star on GitHub</a>
+      </div>
+    </div>
+  </section>
 
-    <!-- Overview Card -->
-    <section class="about-card">
-      <h2 class="card-title">📖 What is Java Step Debugger?</h2>
-      <p class="card-text">
-        Inspired by educational execution visualizers like PythonTutor, Java Step Debugger enables students, educators, and developers to write or paste any Java code and understand its exact runtime control flow.
-      </p>
-      <p class="card-text">
-        Instead of guessing what happens inside loops, recursion, or array manipulations, the visualizer captures every execution step directly from the Java Virtual Machine. You can scrub through time using an interactive slider or step line-by-line using keyboard shortcuts.
-      </p>
-    </section>
+  <!-- Main Content -->
+  <main class="about-content">
 
-    <!-- How It Works & Architecture -->
-    <section class="about-card">
-      <h2 class="card-title">⚙️ Architecture & How It Works</h2>
-      <p class="card-text">
-        The debugger is powered by Java's native <strong>Java Debug Interface (JDI)</strong>. Here is how execution flows under the hood:
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num">1000</div>
+        <div class="stat-label">Max Steps Traced</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">4+</div>
+        <div class="stat-label">Stdlib Packages</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">JDI</div>
+        <div class="stat-label">Native Debug Engine</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">21</div>
+        <div class="stat-label">Java LTS Version</div>
+      </div>
+    </div>
+
+    <!-- What Is It -->
+    <div class="section-card">
+      <h2 class="section-title">📖 What is Java Step Debugger?</h2>
+      <p class="section-text">
+        Inspired by educational execution visualizers like PythonTutor, Java Step Debugger lets students, educators, and developers write or paste any Java code and understand its exact runtime control flow.<br><br>
+        Instead of guessing what happens inside loops, recursion, or array manipulations, the visualizer captures every execution step directly from the Java Virtual Machine using <strong>JDI step events</strong>. You can scrub through time with an interactive slider or step line-by-line with keyboard shortcuts — all in one focused, non-scrolling screen.
       </p>
+    </div>
+
+    <!-- Architecture -->
+    <div class="section-card">
+      <h2 class="section-title">⚙️ How It Works</h2>
       <div class="arch-flow">
-        <div class="arch-box">1. User Code & Stdin<br><small style="color:#9ca3af">Editor / Paste</small></div>
+        <div class="arch-node">
+          <div class="arch-num">Step 1</div>
+          <div class="arch-label">User Code & Input</div>
+          <div class="arch-sub">Editor / paste + stdin</div>
+        </div>
         <div class="arch-arrow">→</div>
-        <div class="arch-box">2. Javac Compilation<br><small style="color:#9ca3af">with -g debug info</small></div>
+        <div class="arch-node">
+          <div class="arch-num">Step 2</div>
+          <div class="arch-label">javac -g Compile</div>
+          <div class="arch-sub">Debug symbols embedded</div>
+        </div>
         <div class="arch-arrow">→</div>
-        <div class="arch-box">3. JDI Tracer VM<br><small style="color:#9ca3af">StepRequest events</small></div>
+        <div class="arch-node">
+          <div class="arch-num">Step 3</div>
+          <div class="arch-label">JDI Tracer VM</div>
+          <div class="arch-sub">StepRequest events</div>
+        </div>
         <div class="arch-arrow">→</div>
-        <div class="arch-box">4. Frame & Stdio Capture<br><small style="color:#9ca3af">JSON trace snapshot</small></div>
+        <div class="arch-node">
+          <div class="arch-num">Step 4</div>
+          <div class="arch-label">Frame Capture</div>
+          <div class="arch-sub">Variables + stdout JSON</div>
+        </div>
         <div class="arch-arrow">→</div>
-        <div class="arch-box">5. Interactive UI<br><small style="color:#9ca3af">Step, Slider & Output</small></div>
+        <div class="arch-node">
+          <div class="arch-num">Step 5</div>
+          <div class="arch-label">Interactive UI</div>
+          <div class="arch-sub">Step, Slider, Output</div>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Key Features Grid -->
-    <section class="about-card">
-      <h2 class="card-title">✨ Key Features</h2>
+    <!-- Features -->
+    <div class="section-card">
+      <h2 class="section-title">✨ Key Features</h2>
       <div class="feature-grid">
-        <div class="feature-item">
-          <span class="feature-icon">🎯</span>
-          <span class="feature-name">Exact Line-by-Line Cursor</span>
-          <span class="feature-desc">Active execution indicator (▶) points to the current line with smooth auto-scroll keeping focus in a single screen.</span>
+        <div class="feat">
+          <span class="feat-icon">🎯</span>
+          <span class="feat-name">Line-by-Line Cursor</span>
+          <span class="feat-desc">Active ▶ indicator tracks the executing line with smooth internal auto-scroll, keeping everything on one screen.</span>
         </div>
-        <div class="feature-item">
-          <span class="feature-icon">📊</span>
-          <span class="feature-name">Real-Time Variable Table</span>
-          <span class="feature-desc">Inspects local variables, method arguments, arrays, and custom object fields at every instruction step.</span>
+        <div class="feat">
+          <span class="feat-icon">📊</span>
+          <span class="feat-name">Real-Time Variables</span>
+          <span class="feat-desc">Inspects local variables, method args, arrays, and custom object fields at every single step.</span>
         </div>
-        <div class="feature-item">
-          <span class="feature-icon">⌨️</span>
-          <span class="feature-name">Standard Input (stdin)</span>
-          <span class="feature-desc">Dedicated input bar supports <code>Scanner(System.in)</code> and <code>BufferedReader</code> without hanging or timeouts.</span>
+        <div class="feat">
+          <span class="feat-icon">⌨️</span>
+          <span class="feat-name">stdin Support</span>
+          <span class="feat-desc">Dedicated input bar lets programs using <code>Scanner(System.in)</code> run without hanging or timing out.</span>
         </div>
-        <div class="feature-item">
-          <span class="feature-icon">📦</span>
-          <span class="feature-name">All Java Standard Libraries</span>
-          <span class="feature-desc">Pre-configured with <code>java.util.*</code>, <code>java.io.*</code>, <code>java.math.*</code>, <code>java.time.*</code> collections and data structures.</span>
+        <div class="feat">
+          <span class="feat-icon">📦</span>
+          <span class="feat-name">Full Standard Libraries</span>
+          <span class="feat-desc">Pre-configured with <code>java.util.*</code>, <code>java.io.*</code>, <code>java.math.*</code>, <code>java.time.*</code> — no missing imports.</span>
         </div>
-        <div class="feature-item">
-          <span class="feature-icon">🔄</span>
-          <span class="feature-name">Recursion & Call Stacks</span>
-          <span class="feature-desc">Tracks recursive functions like Factorial with multi-frame stack visualization and return value inspection.</span>
+        <div class="feat">
+          <span class="feat-icon">🔄</span>
+          <span class="feat-name">Recursion & Call Stack</span>
+          <span class="feat-desc">Multi-frame stack visualization for recursive methods like Factorial, Fibonacci, and DFS.</span>
         </div>
-        <div class="feature-item">
-          <span class="feature-icon">⚡</span>
-          <span class="feature-name">Keyboard Controls</span>
-          <span class="feature-desc">Use arrow keys or spacebar for rapid stepping, auto-playback, and scrub slider navigation.</span>
+        <div class="feat">
+          <span class="feat-icon">🖥️</span>
+          <span class="feat-name">Single-Screen Layout</span>
+          <span class="feat-desc">Code, variables, output, and controls always visible on screen — no jumping up and down the page.</span>
+        </div>
+        <div class="feat">
+          <span class="feat-icon">🎚️</span>
+          <span class="feat-name">Timeline Scrubber</span>
+          <span class="feat-desc">Jump to any execution step instantly using the interactive blue slider bar.</span>
+        </div>
+        <div class="feat">
+          <span class="feat-icon">🔍</span>
+          <span class="feat-name">Syntax Highlighting</span>
+          <span class="feat-desc">Colour-coded Java keywords, types, strings, numbers, and comments for easy reading.</span>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Keyboard Shortcuts -->
-    <section class="about-card">
-      <h2 class="card-title">⌨️ Keyboard Shortcuts</h2>
+    <!-- Shortcuts -->
+    <div class="section-card">
+      <h2 class="section-title">⌨️ Keyboard Shortcuts</h2>
       <table class="kbd-table">
         <thead>
-          <tr>
-            <th>Shortcut</th>
-            <th>Action</th>
-          </tr>
+          <tr><th>Key</th><th>Action</th></tr>
         </thead>
         <tbody>
-          <tr>
-            <td><kbd>→</kbd> Right Arrow</td>
-            <td>Step forward to the next line of code</td>
-          </tr>
-          <tr>
-            <td><kbd>←</kbd> Left Arrow</td>
-            <td>Step backward to the previous execution state</td>
-          </tr>
-          <tr>
-            <td><kbd>Space</kbd></td>
-            <td>Toggle auto-play / pause execution playback</td>
-          </tr>
+          <tr><td><kbd>→</kbd> Right Arrow</td><td>Step forward to the next executed line</td></tr>
+          <tr><td><kbd>←</kbd> Left Arrow</td><td>Step backward to the previous state</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Toggle auto-play / pause execution playback</td></tr>
         </tbody>
       </table>
-    </section>
+    </div>
 
-    <!-- Author & Footer -->
-    <footer class="author-section">
-      <p>Created by <a href="https://github.com/Bhavesh3961" target="_blank" class="author-link">Bhavesh3961</a> • Java Step Debugger</p>
-    </footer>
-  </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="about-footer">
+    <p>
+      Created by <a href="https://github.com/Bhavesh3961" target="_blank">Bhavesh3961</a>
+      &nbsp;•&nbsp;
+      <a href="https://github.com/Bhavesh3961/Java-step-debugger" target="_blank">GitHub Repository</a>
+      &nbsp;•&nbsp;
+      MIT License
+    </p>
+  </footer>
+
 </body>
 </html>
