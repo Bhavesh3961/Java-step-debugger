@@ -152,85 +152,25 @@ body {
 }
 
 /* ==========================================================================
-   Editor Drawer
+   Program Input Bar (stdin for Scanner)
    ========================================================================== */
-.editor-section {
-  background-color: var(--bg-panel);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.editor-section.hidden {
-  display: none;
-}
-
-.editor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.editor-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.tag-badge {
-  font-size: 11px;
-  background-color: rgba(41, 98, 255, 0.2);
-  color: #93c5fd;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(41, 98, 255, 0.4);
-}
-
-.btn-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.btn-close:hover {
-  color: #ffffff;
-}
-
-.editor-body textarea {
+.stdin-section {
   width: 100%;
-  height: 240px;
-  background-color: #121315;
-  color: #f3f4f6;
-  border: 1px solid #323640;
-  border-radius: 6px;
-  padding: 14px;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  line-height: 1.6;
-  resize: vertical;
-  outline: none;
 }
 
-.editor-body textarea:focus {
-  border-color: var(--color-blue-primary);
-}
-
-.editor-input-bar {
+.stdin-bar {
   display: flex;
   align-items: center;
   gap: 12px;
-  background-color: #121315;
-  border: 1px solid #323640;
+  background-color: var(--bg-panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 8px 14px;
+  padding: 8px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.stdin-icon {
+  font-size: 16px;
 }
 
 .stdin-label {
@@ -242,29 +182,25 @@ body {
 
 .stdin-input {
   flex: 1;
-  background: transparent;
-  border: none;
+  background: #14161a;
+  border: 1px solid #3c4250;
+  border-radius: 4px;
+  padding: 6px 12px;
   color: #f3f4f6;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13.5px;
   outline: none;
+  transition: border-color 0.15s ease;
 }
 
-.stdin-input::placeholder {
-  color: #6b7280;
+.stdin-input:focus {
+  border-color: var(--color-blue-primary);
 }
 
-.editor-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.editor-hint {
-  font-size: 13px;
+.stdin-hint {
+  font-size: 12px;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -304,12 +240,12 @@ body {
 }
 
 /* ==========================================================================
-   Visualizer Workspace (Exact Layout from Screenshots)
+   Visualizer Workspace
    ========================================================================== */
 .visualizer-main {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 16px;
 }
 
 /* Top Row: Code Panel (Left) & Variables Table (Right) */
@@ -320,7 +256,7 @@ body {
   align-items: flex-start;
 }
 
-/* Code Container with Dashed Outline */
+/* Code Container with Dashed Outline - Integrated Compiler/Editor Block */
 .code-container-wrapper {
   position: relative;
   width: 100%;
@@ -330,95 +266,167 @@ body {
   border: 1.5px dashed var(--color-border-dashed);
   border-radius: 4px;
   background-color: var(--bg-code);
+  height: 330px;
+  max-height: 330px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s ease;
+}
+
+.code-container:focus-within {
+  border-color: #60a5fa;
+}
+
+/* Line Number Gutter */
+.editor-gutter {
+  width: 50px;
+  min-width: 50px;
+  background-color: rgba(0, 0, 0, 0.25);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   padding: 12px 0;
+  user-select: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.gutter-row {
+  height: 26px;
+  line-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-gutter);
+}
+
+.gutter-row.active {
+  color: #60a5fa;
+  font-weight: 700;
+  background: rgba(41, 98, 255, 0.15);
+}
+
+.gutter-arrow {
+  position: absolute;
+  left: 6px;
+  color: #60a5fa;
+  font-size: 11px;
+  display: none;
+}
+
+.gutter-row.active .gutter-arrow {
+  display: inline-block;
+}
+
+/* Editor Surface */
+.editor-surface {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Syntax Highlight Layer (Pre) */
+.editor-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  margin: 0;
+  border: none;
   font-family: var(--font-mono);
   font-size: 14px;
   line-height: 26px;
-  height: 330px;
-  max-height: 330px;
-  overflow-y: auto;
-  overflow-x: auto;
-  scroll-behavior: smooth;
+  tab-size: 4;
+  white-space: pre;
+  word-wrap: normal;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--syn-ident);
+  z-index: 1;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.code-container::-webkit-scrollbar,
-.output-terminal::-webkit-scrollbar,
-.variables-body::-webkit-scrollbar {
+/* Each line inside highlight pre */
+.editor-line {
+  height: 26px;
+  line-height: 26px;
+  white-space: pre;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.editor-line.active {
+  background-color: rgba(41, 98, 255, 0.22);
+  border-left: 3px solid #2962ff;
+  padding-left: 1px;
+}
+
+/* Textarea Layer (Interactive editing, transparent text, visible cursor) */
+.editor-textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  margin: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 26px;
+  tab-size: 4;
+  white-space: pre;
+  word-wrap: normal;
+  overflow: auto;
+  background: transparent;
+  color: transparent;
+  caret-color: #60a5fa;
+  z-index: 2;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.editor-textarea::selection {
+  background: rgba(41, 98, 255, 0.45);
+  color: transparent;
+}
+
+.editor-textarea::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-.code-container::-webkit-scrollbar-track,
+.editor-textarea::-webkit-scrollbar-track,
 .output-terminal::-webkit-scrollbar-track,
 .variables-body::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.code-container::-webkit-scrollbar-thumb,
+.editor-textarea::-webkit-scrollbar-thumb,
 .output-terminal::-webkit-scrollbar-thumb,
 .variables-body::-webkit-scrollbar-thumb {
   background: #3b4252;
   border-radius: 3px;
 }
 
-.code-container::-webkit-scrollbar-thumb:hover,
+.editor-textarea::-webkit-scrollbar-thumb:hover,
 .output-terminal::-webkit-scrollbar-thumb:hover,
 .variables-body::-webkit-scrollbar-thumb:hover {
   background: #4c566a;
-}
-
-.code-lines {
-  display: flex;
-  flex-direction: column;
-}
-
-.code-line {
-  display: flex;
-  align-items: center;
-  padding: 0 16px 0 10px;
-  min-height: 26px;
-  position: relative;
-}
-
-/* Highlight of the active line */
-.code-line.active {
-  background-color: var(--bg-active-line);
-}
-
-/* Gutter containing arrow + line number */
-.line-gutter {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 44px;
-  min-width: 44px;
-  margin-right: 16px;
-  user-select: none;
-  position: relative;
-}
-
-.line-indicator {
-  position: absolute;
-  left: 2px;
-  color: #ffffff;
-  font-size: 11px;
-  display: none;
-}
-
-.code-line.active .line-indicator {
-  display: inline-block;
-}
-
-.line-number {
-  color: var(--text-gutter);
-  font-size: 13.5px;
-  text-align: right;
-  width: 22px;
-}
-
-.code-content {
-  white-space: pre;
-  color: var(--syn-ident);
 }
 
 /* Syntax Token Highlighting */

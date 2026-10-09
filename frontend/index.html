@@ -18,11 +18,8 @@
         <label for="exampleSelect" class="label-muted">Examples:</label>
         <select id="exampleSelect" class="select-dropdown">
           <option value="">— Pick an example —</option>
-          <!-- Options are populated dynamically from embedded_traces.json -->
+          <!-- Populated dynamically from embedded_traces.json -->
         </select>
-        <button id="toggleEditBtn" class="btn btn-secondary">
-          <span class="btn-icon">✏️</span> Edit Code
-        </button>
         <a href="about.html" class="btn btn-secondary" style="text-decoration:none;">
           <span class="btn-icon">ℹ️</span> About
         </a>
@@ -31,32 +28,6 @@
         </button>
       </div>
     </header>
-
-    <!-- Editor Drawer (Expandable / Collapsible) -->
-    <section id="editorSection" class="editor-section hidden">
-      <div class="editor-header">
-        <div class="editor-title">
-          <span>Java Source Code</span>
-          <span class="tag-badge">Java 21 • Standard Libraries Included</span>
-        </div>
-        <div class="editor-actions">
-          <button id="closeEditorBtn" class="btn-close" title="Close Editor">✕</button>
-        </div>
-      </div>
-      <div class="editor-body">
-        <textarea id="codeEditor" spellcheck="false" placeholder="Paste or write your Java code here..."></textarea>
-      </div>
-      <div class="editor-input-bar">
-        <label for="stdinInput" class="stdin-label">⌨️ Program Input (stdin):</label>
-        <input type="text" id="stdinInput" class="stdin-input" placeholder="e.g. 3 (values for Scanner / System.in)" value="3">
-      </div>
-      <div class="editor-footer">
-        <span class="editor-hint">💡 Tip: Collections, Math, Scanner/IO, and standard libraries are fully supported.</span>
-        <button id="runFromEditorBtn" class="btn btn-primary-accent">
-          <span>Run Debugger</span>
-        </button>
-      </div>
-    </section>
 
     <!-- Error Banner -->
     <div id="errorBanner" class="error-banner hidden">
@@ -67,15 +38,21 @@
       <pre id="errorDetails" class="error-details"></pre>
     </div>
 
-    <!-- Visualizer Workspace (Exact Layout from Screenshots) -->
+    <!-- Visualizer Workspace -->
     <main class="visualizer-main">
-      <!-- Top Row: Code Panel (Left) & Variables Table (Right) -->
+      <!-- Top Row: Code Compiler/Editor Box (Left) & Variables Table (Right) -->
       <div class="top-row">
-        <!-- Code Display Box with Dashed Border -->
+        <!-- Integrated Code Editor & Execution Block with Dashed Border -->
         <div class="code-container-wrapper">
           <div class="code-container" id="codeContainer">
-            <!-- Code Lines Rendered Dynamically -->
-            <div id="codeLines" class="code-lines"></div>
+            <!-- Dynamic Line Number Gutter with ▶ indicator -->
+            <div class="editor-gutter" id="editorGutter"></div>
+
+            <!-- Code Editor Surface (Interactive Compiler + Syntax Highlight) -->
+            <div class="editor-surface" id="editorSurface">
+              <pre class="editor-highlight" id="editorHighlight" aria-hidden="true"></pre>
+              <textarea id="codeEditor" class="editor-textarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Write or paste your Java code here directly..."></textarea>
+            </div>
           </div>
         </div>
 
@@ -89,7 +66,6 @@
             </div>
           </div>
           <div class="variables-body" id="variablesBody">
-            <!-- Variable rows rendered dynamically -->
             <div class="var-row">
               <span class="var-name">number</span>
               <span class="var-value">1</span>
@@ -102,6 +78,16 @@
       <div id="callStackContainer" class="call-stack-container hidden">
         <span class="call-stack-label">Call Stack:</span>
         <div id="callStackChips" class="call-stack-chips"></div>
+      </div>
+
+      <!-- Program Input Bar for Scanner / System.in -->
+      <div class="stdin-section">
+        <div class="stdin-bar">
+          <span class="stdin-icon">⌨️</span>
+          <label for="stdinInput" class="stdin-label">Program Input (stdin):</label>
+          <input type="text" id="stdinInput" class="stdin-input" placeholder="e.g. 3 (values for Scanner / System.in)" value="3">
+          <span class="stdin-hint">Auto-piped to Scanner(System.in)</span>
+        </div>
       </div>
 
       <!-- Output Panel with Solid Blue Header Bar -->
@@ -141,7 +127,7 @@
 
     <!-- Footer shortcut hint -->
     <footer class="app-footer">
-      <span>Use <kbd>←</kbd> and <kbd>→</kbd> arrow keys to step forward & backward • <kbd>Space</kbd> to toggle playback</span>
+      <span>Type or paste directly in code box • <kbd>Tab</kbd> to indent • <kbd>←</kbd> <kbd>→</kbd> to step • <kbd>Space</kbd> play/pause • <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> to Visualize</span>
     </footer>
   </div>
 
