@@ -234,16 +234,9 @@ class DebuggerApp {
       // Check if current line ends with open brace {
       const trimmedLineBefore = currentLine.trimEnd();
       const endsWithOpenBrace = trimmedLineBefore.endsWith('{');
-      const isBetweenBraces = endsWithOpenBrace && afterCursor.startsWith('}');
 
-      if (isBetweenBraces) {
-        // Between { and } -> newline + indent + 4 spaces + newline + currentIndent
-        const insideIndent = currentIndent + '    ';
-        const insertion = '\n' + insideIndent + '\n' + currentIndent;
-        textarea.value = beforeCursor + insertion + afterCursor;
-        textarea.selectionStart = textarea.selectionEnd = start + 1 + insideIndent.length;
-      } else if (endsWithOpenBrace) {
-        // Inside loop or block ending with { -> new line starts with 4 extra spaces
+      if (endsWithOpenBrace) {
+        // Line ends with { -> indent next line by 4 spaces
         const newIndent = currentIndent + '    ';
         const insertion = '\n' + newIndent;
         textarea.value = beforeCursor + insertion + afterCursor;
@@ -258,49 +251,16 @@ class DebuggerApp {
       return;
     }
 
-    // 4. Auto-closing pairs: { } ( ) [ ] " " ' '
-    const pairs = { '{': '}', '(': ')', '[': ']', '"': '"', "'": "'" };
-    const closers = ['}', ')', ']', '"', "'"];
-
-    if (pairs[e.key]) {
-      e.preventDefault();
-      const closer = pairs[e.key];
-      if (start !== end) {
-        // Wrap selected text
-        const sel = text.substring(start, end);
-        textarea.value = text.substring(0, start) + e.key + sel + closer + text.substring(end);
-        textarea.selectionStart = start + 1;
-        textarea.selectionEnd = end + 1;
-      } else {
-        // Insert pair and place cursor between
-        textarea.value = text.substring(0, start) + e.key + closer + text.substring(end);
-        textarea.selectionStart = textarea.selectionEnd = start + 1;
-      }
-      this.onCodeInput();
-      return;
-    }
-
-    // 5. Skip closing character if typed right before existing one
-    if (closers.includes(e.key) && start === end && text.charAt(start) === e.key) {
-      e.preventDefault();
-      textarea.selectionStart = textarea.selectionEnd = start + 1;
-      return;
-    }
-
-    // 6. Backspace: delete matching empty pair
-    if (e.key === 'Backspace' && start === end && start > 0) {
-      const prevChar = text.charAt(start - 1);
-      const nextChar = text.charAt(start);
-      if (
-        (prevChar === '{' && nextChar === '}') ||
-        (prevChar === '(' && nextChar === ')') ||
-        (prevChar === '[' && nextChar === ']') ||
-        (prevChar === '"' && nextChar === '"') ||
-        (prevChar === "'" && nextChar === "'")
-      ) {
+    // 4. Closing brace }: un-indent by 4 spaces if on an empty indented line
+    if (e.key === '}') {
+      const beforeCursor = text.substring(0, start);
+      const lastNewline = beforeCursor.lastIndexOf('\n');
+      const currentLine = beforeCursor.substring(lastNewline + 1);
+      if (/^[ ]{4,}$/.test(currentLine) && start === end) {
         e.preventDefault();
-        textarea.value = text.substring(0, start - 1) + text.substring(start + 1);
-        textarea.selectionStart = textarea.selectionEnd = start - 1;
+        const newBefore = beforeCursor.substring(0, beforeCursor.length - 4);
+        textarea.value = newBefore + '}' + text.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = newBefore.length + 1;
         this.onCodeInput();
         return;
       }

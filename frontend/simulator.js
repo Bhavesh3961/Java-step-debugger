@@ -227,15 +227,25 @@ class JavaSimulator {
       });
 
       // If / else if / else
-      line = line.replace(/else\s+if\s*\((.*?)\)\s*\{/g, (m, cond) => {
-        return `} else if (recordStep(${lineNum}) && (${cond})) {`;
-      });
-      line = line.replace(/if\s*\((.*?)\)\s*\{/g, (m, cond) => {
-        return `recordStep(${lineNum}); if (${cond}) {`;
-      });
+      if (line.includes('else if')) {
+        line = line.replace(/(?:\}\s*)?else\s+if\s*\((.*?)\)\s*\{/g, (m, cond) => {
+          return `} else if (recordStep(${lineNum}) && (${cond})) {`;
+        });
+      } else if (/(\}|\s|^)else\s*\{/.test(line)) {
+        line = line.replace(/(?:\}\s*)?else\s*\{/g, () => {
+          return `} else { recordStep(${lineNum});`;
+        });
+      } else if (/(?<!else\s*)if\s*\(/.test(line)) {
+        line = line.replace(/(?<!else\s*)if\s*\((.*?)\)\s*\{/g, (m, cond) => {
+          return `recordStep(${lineNum}); if (${cond}) {`;
+        });
+      }
 
       // Variable declaration with assignment: int number = 1;
-      line = line.replace(/\b(int|double|float|long|boolean|char|String)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
+      line = line.replace(/\b(int|long)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
+        return `let ${v} = Math.trunc(${val}); regVar('${v}', '${type}', () => ${v}); recordStep(${lineNum});`;
+      });
+      line = line.replace(/\b(double|float|boolean|char|String)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
         return `let ${v} = ${val}; regVar('${v}', '${type}', () => ${v}); recordStep(${lineNum});`;
       });
 
@@ -249,6 +259,9 @@ class JavaSimulator {
       line = line.replace(/\bString\s+(\w+);/g, (m, v) => {
         return `let ${v} = null; regVar('${v}', 'String', () => ${v}); recordStep(${lineNum});`;
       });
+
+      // Integer division: num /= 10 -> num = Math.trunc(num / 10)
+      line = line.replace(/(\w+)\s*\/=\s*([^;]+);/g, '$1 = Math.trunc($1 / ($2));');
 
       // Standalone assignments / increments: number++; or total += scores[i];
       if (/^\s*[a-zA-Z0-9_.]+(\+\+|--|\s*[+\-*/%]?=)/.test(line)) {

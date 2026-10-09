@@ -3,63 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About - Java Step Debugger & Execution Visualizer</title>
+  <title>About JavTrace — Interactive Java Execution Visualizer</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* -------------------------------------------------------
-       About Page  –  Enhanced Visual Design
-    ------------------------------------------------------- */
     .about-page {
       background: var(--bg-app);
       min-height: 100vh;
       font-family: var(--font-sans);
       color: var(--text-main);
+      line-height: 1.6;
     }
 
-    /* ====== HERO ====== */
+    /* Navbar */
+    .about-navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(24, 25, 28, 0.85);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .btn-nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #e5e7eb;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13.5px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.15s ease;
+    }
+
+    .btn-nav-back:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    /* Hero */
     .hero {
       position: relative;
-      overflow: hidden;
-      padding: 72px 24px 64px;
+      padding: 80px 24px 60px;
       text-align: center;
-      background: linear-gradient(160deg, #0d1117 0%, #0f1724 40%, #111827 100%);
+      overflow: hidden;
     }
 
-    /* animated background grid */
-    .hero::before {
-      content: '';
+    .hero-glow {
       position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(41,98,255,.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(41,98,255,.06) 1px, transparent 1px);
-      background-size: 40px 40px;
-      animation: gridMove 20s linear infinite;
-      pointer-events: none;
-    }
-
-    @keyframes gridMove {
-      0%   { background-position: 0 0, 0 0; }
-      100% { background-position: 40px 40px, 40px 40px; }
-    }
-
-    /* glowing orb */
-    .hero::after {
-      content: '';
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      top: -200px;
+      top: -100px;
       left: 50%;
       transform: translateX(-50%);
-      background: radial-gradient(ellipse at center, rgba(41,98,255,.18) 0%, transparent 70%);
+      width: 650px;
+      height: 380px;
+      background: radial-gradient(ellipse at center, rgba(41, 98, 255, 0.22) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 75%);
       pointer-events: none;
+      filter: blur(20px);
     }
 
-    .hero-inner {
+    .hero-container {
       position: relative;
-      z-index: 1;
-      max-width: 820px;
+      max-width: 860px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -67,519 +94,480 @@
       gap: 20px;
     }
 
-    .hero-icon-wrap {
-      width: 80px;
-      height: 80px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #1a3a8f, #2962ff);
-      display: flex;
+    .hero-badge-tag {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      font-size: 38px;
-      box-shadow: 0 0 40px rgba(41,98,255,.45), 0 0 0 1px rgba(255,255,255,.08);
-      animation: pulse 3s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 40px rgba(41,98,255,.45), 0 0 0 1px rgba(255,255,255,.08); }
-      50%       { box-shadow: 0 0 70px rgba(41,98,255,.65), 0 0 0 1px rgba(255,255,255,.12); }
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(88, 166, 255, 0.1);
+      border: 1px solid rgba(88, 166, 255, 0.25);
+      color: #79c0ff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
     }
 
     .hero-title {
-      font-size: clamp(26px, 4.5vw, 44px);
+      font-size: clamp(32px, 5.5vw, 56px);
       font-weight: 800;
-      letter-spacing: -1px;
+      letter-spacing: -1.5px;
       line-height: 1.15;
-      color: #fff;
+      color: #ffffff;
       margin: 0;
     }
 
-    .hero-title span {
-      background: linear-gradient(90deg, #60a5fa, #a78bfa, #60a5fa);
-      background-size: 200% auto;
+    .hero-gradient {
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: shimmer 4s linear infinite;
     }
 
-    @keyframes shimmer {
-      to { background-position: 200% center; }
-    }
-
-    .hero-sub {
-      font-size: 17px;
+    .hero-subtitle {
+      font-size: clamp(16px, 2vw, 19px);
       color: #9ca3af;
-      max-width: 620px;
-      line-height: 1.65;
+      max-width: 680px;
+      line-height: 1.6;
       margin: 0;
     }
 
-    .badge-row {
+    .hero-buttons {
       display: flex;
-      gap: 8px;
+      gap: 14px;
       flex-wrap: wrap;
       justify-content: center;
+      margin-top: 10px;
     }
 
-    .badge {
-      padding: 5px 13px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .3px;
-      border: 1px solid;
-    }
-
-    .badge-blue   { background: rgba(41,98,255,.15);  color: #93c5fd; border-color: rgba(41,98,255,.35); }
-    .badge-green  { background: rgba(16,185,129,.15); color: #6ee7b7; border-color: rgba(16,185,129,.35); }
-    .badge-purple { background: rgba(168,85,247,.15); color: #d8b4fe; border-color: rgba(168,85,247,.35); }
-    .badge-amber  { background: rgba(245,158,11,.15); color: #fcd34d; border-color: rgba(245,158,11,.35); }
-
-    .hero-cta {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .btn-hero {
+    .btn-main-cta {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 11px 22px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 15px;
-      text-decoration: none;
-      transition: all .2s ease;
-      cursor: pointer;
-      border: none;
-    }
-
-    .btn-hero-primary {
+      padding: 12px 26px;
       background: var(--color-blue-primary);
       color: #fff;
-    }
-
-    .btn-hero-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(41,98,255,.4); }
-
-    .btn-hero-outline {
-      background: transparent;
-      color: #e5e7eb;
-      border: 1px solid #3c4250;
-    }
-
-    .btn-hero-outline:hover { background: #1f2330; transform: translateY(-1px); }
-
-    /* ====== CONTENT WRAPPER ====== */
-    .about-content {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 48px 24px 80px;
-      display: flex;
-      flex-direction: column;
-      gap: 36px;
-    }
-
-    /* ====== SECTION CARD ====== */
-    .section-card {
-      background: #1e212a;
-      border: 1px solid rgba(255,255,255,.07);
-      border-radius: 12px;
-      padding: 28px 32px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* coloured left accent */
-    .section-card::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 3px;
-      background: linear-gradient(180deg, #2962ff, #7c3aed);
-      border-radius: 3px 0 0 3px;
-    }
-
-    .section-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      margin: 0 0 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .section-text {
-      color: #d1d5db;
-      line-height: 1.75;
+      font-weight: 600;
       font-size: 15px;
-      margin: 0;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 18px rgba(41, 98, 255, 0.35);
     }
 
-    /* ====== FEATURES GRID ====== */
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 14px;
+    .btn-main-cta:hover {
+      background: #1e4bd8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(41, 98, 255, 0.5);
     }
 
-    .feat {
-      background: #13161f;
-      border: 1px solid rgba(255,255,255,.05);
-      border-radius: 10px;
-      padding: 18px 18px 16px;
-      display: flex;
-      flex-direction: column;
+    .btn-sub-cta {
+      display: inline-flex;
+      align-items: center;
       gap: 8px;
-      transition: border-color .2s, transform .2s;
+      padding: 12px 22px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #e5e7eb;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.2s ease;
     }
 
-    .feat:hover {
-      border-color: rgba(41,98,255,.4);
+    .btn-sub-cta:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
       transform: translateY(-2px);
     }
 
-    .feat-icon {
-      font-size: 26px;
+    /* Main Container */
+    .content-wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 20px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
     }
 
-    .feat-name {
-      font-size: 14.5px;
+    /* Bento Grid */
+    .bento-section-title {
+      font-size: 24px;
       font-weight: 700;
-      color: #f3f4f6;
-    }
-
-    .feat-desc {
-      font-size: 13px;
-      color: #9ca3af;
-      line-height: 1.55;
-    }
-
-    /* ====== ARCHITECTURE FLOW ====== */
-    .arch-flow {
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
       gap: 10px;
-      margin-top: 8px;
     }
 
-    .arch-node {
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .bento-card {
+      background: #1e1f23;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .bento-card:hover {
+      border-color: rgba(88, 166, 255, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .bento-card.span-2 {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 900px) {
+      .bento-card.span-2 {
+        grid-column: span 1;
+      }
+    }
+
+    .bento-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .bento-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .bento-text {
+      font-size: 14px;
+      color: #9ca3af;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .code-pill {
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.07);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      color: #79c0ff;
+    }
+
+    /* Architecture Flow */
+    .arch-container {
+      background: #1e1f23;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 32px 28px;
+    }
+
+    .flow-steps {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .flow-card {
       flex: 1;
-      min-width: 120px;
-      background: #13161f;
-      border: 1px solid #2d3345;
-      border-radius: 8px;
-      padding: 12px 14px;
+      min-width: 170px;
+      background: #161719;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 18px 16px;
       text-align: center;
-      transition: border-color .2s;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s ease;
     }
 
-    .arch-node:hover { border-color: #2962ff; }
+    .flow-card:hover {
+      border-color: rgba(88, 166, 255, 0.35);
+    }
 
-    .arch-num {
-      font-size: 10px;
-      font-weight: 800;
-      color: #2962ff;
+    .flow-step-num {
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
+      color: #58a6ff;
     }
 
-    .arch-label {
-      font-size: 13px;
+    .flow-step-name {
+      font-size: 14px;
       font-weight: 700;
       color: #e5e7eb;
-      margin: 4px 0 2px;
     }
 
-    .arch-sub {
-      font-size: 11px;
-      color: #6b7280;
+    .flow-step-desc {
+      font-size: 12px;
+      color: #8b949e;
+      line-height: 1.5;
     }
 
-    .arch-arrow {
-      color: #2962ff;
-      font-size: 20px;
-      font-weight: 900;
-      flex-shrink: 0;
+    /* Shortcuts Table */
+    .shortcuts-card {
+      background: #1e1f23;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 28px;
     }
 
-    /* ====== KEYBOARD TABLE ====== */
-    .kbd-table {
+    .shortcut-table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 16px;
     }
 
-    .kbd-table th, .kbd-table td {
-      padding: 11px 16px;
+    .shortcut-table th {
       text-align: left;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(255,255,255,.05);
-    }
-
-    .kbd-table th {
-      color: #6b7280;
-      font-weight: 700;
       font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-    }
-
-    .kbd-table td:first-child { font-family: var(--font-mono); }
-
-    /* ====== STATS ROW ====== */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px;
-    }
-
-    .stat-box {
-      background: #13161f;
-      border: 1px solid rgba(255,255,255,.05);
-      border-radius: 10px;
-      padding: 20px 18px;
-      text-align: center;
-    }
-
-    .stat-num {
-      font-size: 32px;
-      font-weight: 900;
-      background: linear-gradient(90deg, #60a5fa, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 4px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: .4px;
-    }
-
-    /* ====== FOOTER ====== */
-    .about-footer {
-      text-align: center;
-      padding: 28px 24px;
-      border-top: 1px solid rgba(255,255,255,.06);
+      letter-spacing: 0.6px;
       color: #6b7280;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .shortcut-table td {
+      padding: 14px;
       font-size: 14px;
+      color: #d1d5db;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
 
-    .about-footer a {
-      color: #60a5fa;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .about-footer a:hover { text-decoration: underline; }
-
-    /* ====== NAVBAR ====== */
-    .about-navbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 28px;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-      background: rgba(18,19,22,.9);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .btn-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 14px;
-      background: #1f2330;
+    kbd {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: #252830;
       color: #e5e7eb;
-      text-decoration: none;
-      border-radius: 7px;
-      font-weight: 600;
-      font-size: 13.5px;
-      border: 1px solid #3c4250;
-      transition: background .15s, transform .1s;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
     }
 
-    .btn-back:hover { background: #2b3045; transform: translateY(-1px); }
+    /* Footer */
+    .footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 36px 24px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+    }
 
-    @media (max-width: 640px) {
-      .arch-flow { flex-direction: column; }
-      .arch-arrow { transform: rotate(90deg); }
-      .hero { padding: 52px 18px 44px; }
+    .footer a {
+      color: #58a6ff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body class="about-page">
 
-  <!-- Sticky Navbar -->
-  <nav class="about-navbar">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:22px;">☕</span>
-      <span style="font-weight:700;font-size:16px;color:#fff;">Java Step Debugger</span>
-    </div>
-    <a href="index.html" class="btn-back">← Back to Visualizer</a>
-  </nav>
+  <!-- Top Sticky Navigation -->
+  <header class="about-navbar">
+    <a href="index.html" class="brand-link">
+      <span style="font-size: 22px;">☕</span>
+      <span class="brand-title">JavTrace</span>
+      <span class="nav-badge">v2.0</span>
+    </a>
+    <a href="index.html" class="btn-nav-back">
+      <span>←</span> Back to Editor
+    </a>
+  </header>
 
   <!-- Hero Section -->
   <section class="hero">
-    <div class="hero-inner">
-      <div class="hero-icon-wrap">☕</div>
-      <h1 class="hero-title">
-        Java <span>Execution Visualizer</span><br>& Step Debugger
-      </h1>
-      <p class="hero-sub">
-        An interactive, browser-based Java debugger powered by the native JDK Debug Interface — paste any code, step through it line-by-line, and understand exactly how your program runs.
-      </p>
-      <div class="badge-row">
-        <span class="badge badge-blue">JDK 21 LTS</span>
-        <span class="badge badge-green">Native JDI Engine</span>
-        <span class="badge badge-purple">All Libraries Included</span>
-        <span class="badge badge-amber">Scanner / stdin</span>
-        <span class="badge badge-green">Open Source</span>
+    <div class="hero-glow"></div>
+    <div class="hero-container">
+      <div class="hero-badge-tag">
+        <span>⚡</span> Client-Side Real-Time Execution
       </div>
-      <div class="hero-cta">
-        <a href="index.html" class="btn-hero btn-hero-primary">▶ Open Visualizer</a>
-        <a href="https://github.com/Bhavesh3961/Java-step-debugger" target="_blank" class="btn-hero btn-hero-outline">⭐ Star on GitHub</a>
+      <h1 class="hero-title">
+        See your Java code run.<br>
+        <span class="hero-gradient">Line by line. Step by step.</span>
+      </h1>
+      <p class="hero-subtitle">
+        No heavy IDE, no complex JVM setup, no mystery crashes. JavTrace compiles, steps through, and visualizes variable mutations right in your browser.
+      </p>
+      <div class="hero-buttons">
+        <a href="index.html" class="btn-main-cta">
+          <span>▶</span> Open JavTrace Editor
+        </a>
+        <a href="https://github.com/Bhavesh3961/Java-step-debugger" target="_blank" class="btn-sub-cta">
+          <span>⭐</span> GitHub Repository
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Main Content -->
-  <main class="about-content">
+  <!-- Content Wrap -->
+  <main class="content-wrap">
 
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-box">
-        <div class="stat-num">1000</div>
-        <div class="stat-label">Max Steps Traced</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num">4+</div>
-        <div class="stat-label">Stdlib Packages</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num">JDI</div>
-        <div class="stat-label">Native Debug Engine</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num">21</div>
-        <div class="stat-label">Java LTS Version</div>
+    <!-- Bento Features Grid -->
+    <div>
+      <h2 class="bento-section-title">
+        <span>🚀</span> What makes JavTrace different
+      </h2>
+      <div class="bento-grid">
+        
+        <div class="bento-card span-2">
+          <div class="bento-icon">⚡</div>
+          <h3 class="bento-title">Zero Server Latency & 100% In-Browser</h3>
+          <p class="bento-text">
+            Never wait in server queues or deal with cold starts. JavTrace parses and simulates execution directly on the client. It works everywhere—Mac, Windows, Linux, Chromebooks, and even mobile browsers—completely offline-ready.
+          </p>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">💻</div>
+          <h3 class="bento-title">Integrated Execution Block</h3>
+          <p class="bento-text">
+            Type or paste Java code directly into the execution canvas. Includes smart 4-space auto-indent on <span class="code-pill">Enter</span>, natural brace typing, and zero cursor drifting.
+          </p>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">🔍</div>
+          <h3 class="bento-title">Live Variable Inspector</h3>
+          <p class="bento-text">
+            Inspect stack variables, arrays, primitives, and method frames. Every line step highlights updated values with immediate visual diff cues.
+          </p>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">🛡️</div>
+          <h3 class="bento-title">Infinite-Loop Circuit Breaker</h3>
+          <p class="bento-text">
+            Accidentally wrote <span class="code-pill">while(true)</span> without a break? The safety engine limits execution traces to 10,000 steps without ever freezing your tab.
+          </p>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">⌨️</div>
+          <h3 class="bento-title">Full Scanner & stdin Support</h3>
+          <p class="bento-text">
+            Dedicated standard input stream for interactive algorithmic problems. Feeds integers, tokens, and multi-line strings cleanly into <span class="code-pill">Scanner</span>.
+          </p>
+        </div>
+
       </div>
     </div>
 
-    <!-- What Is It -->
-    <div class="section-card">
-      <h2 class="section-title">📖 What is Java Step Debugger?</h2>
-      <p class="section-text">
-        Inspired by educational execution visualizers like PythonTutor, Java Step Debugger lets students, educators, and developers write or paste any Java code and understand its exact runtime control flow.<br><br>
-        Instead of guessing what happens inside loops, recursion, or array manipulations, the visualizer captures every execution step directly from the Java Virtual Machine using <strong>JDI step events</strong>. You can scrub through time with an interactive slider or step line-by-line with keyboard shortcuts — all in one focused, non-scrolling screen.
+    <!-- How It Works Architecture -->
+    <div class="arch-container">
+      <h2 class="bento-section-title" style="margin-bottom: 8px;">
+        <span>⚙️</span> How It Works
+      </h2>
+      <p class="bento-text" style="color: #9ca3af;">
+        From source code to step-by-step visual frames in under 15 milliseconds.
       </p>
-    </div>
 
-    <!-- Architecture -->
-    <div class="section-card">
-      <h2 class="section-title">⚙️ How It Works</h2>
-      <div class="arch-flow">
-        <div class="arch-node">
-          <div class="arch-num">Step 1</div>
-          <div class="arch-label">User Code & Input</div>
-          <div class="arch-sub">Editor / paste + stdin</div>
+      <div class="flow-steps">
+        <div class="flow-card">
+          <span class="flow-step-num">Step 01</span>
+          <span class="flow-step-name">Input & Tokens</span>
+          <span class="flow-step-desc">Accepts custom Java code and standard input (<span class="code-pill">stdin</span>).</span>
         </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node">
-          <div class="arch-num">Step 2</div>
-          <div class="arch-label">javac -g Compile</div>
-          <div class="arch-sub">Debug symbols embedded</div>
+
+        <div class="flow-card">
+          <span class="flow-step-num">Step 02</span>
+          <span class="flow-step-name">AST Normalization</span>
+          <span class="flow-step-desc">Strips class boilerplate, handles Java integer division and loop syntax.</span>
         </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node">
-          <div class="arch-num">Step 3</div>
-          <div class="arch-label">JDI Tracer VM</div>
-          <div class="arch-sub">StepRequest events</div>
+
+        <div class="flow-card">
+          <span class="flow-step-num">Step 03</span>
+          <span class="flow-step-name">Step Recording</span>
+          <span class="flow-step-desc">Captures call stack snapshots, variable states, and console buffers on every executed line.</span>
         </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node">
-          <div class="arch-num">Step 4</div>
-          <div class="arch-label">Frame Capture</div>
-          <div class="arch-sub">Variables + stdout JSON</div>
-        </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node">
-          <div class="arch-num">Step 5</div>
-          <div class="arch-label">Interactive UI</div>
-          <div class="arch-sub">Step, Slider, Output</div>
+
+        <div class="flow-card">
+          <span class="flow-step-num">Step 04</span>
+          <span class="flow-step-name">Interactive Scrubber</span>
+          <span class="flow-step-desc">Allows bi-directional time-travel stepping with the slider and arrow keys.</span>
         </div>
       </div>
     </div>
 
-    <!-- Features -->
-    <div class="section-card">
-      <h2 class="section-title">✨ Key Features</h2>
-      <div class="feature-grid">
-        <div class="feat">
-          <span class="feat-icon">🎯</span>
-          <span class="feat-name">Line-by-Line Cursor</span>
-          <span class="feat-desc">Active ▶ indicator tracks the executing line with smooth internal auto-scroll, keeping everything on one screen.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">📊</span>
-          <span class="feat-name">Real-Time Variables</span>
-          <span class="feat-desc">Inspects local variables, method args, arrays, and custom object fields at every single step.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">⌨️</span>
-          <span class="feat-name">stdin Support</span>
-          <span class="feat-desc">Dedicated input bar lets programs using <code>Scanner(System.in)</code> run without hanging or timing out.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">📦</span>
-          <span class="feat-name">Full Standard Libraries</span>
-          <span class="feat-desc">Pre-configured with <code>java.util.*</code>, <code>java.io.*</code>, <code>java.math.*</code>, <code>java.time.*</code> — no missing imports.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">🔄</span>
-          <span class="feat-name">Recursion & Call Stack</span>
-          <span class="feat-desc">Multi-frame stack visualization for recursive methods like Factorial, Fibonacci, and DFS.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">🖥️</span>
-          <span class="feat-name">Single-Screen Layout</span>
-          <span class="feat-desc">Code, variables, output, and controls always visible on screen — no jumping up and down the page.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">🎚️</span>
-          <span class="feat-name">Timeline Scrubber</span>
-          <span class="feat-desc">Jump to any execution step instantly using the interactive blue slider bar.</span>
-        </div>
-        <div class="feat">
-          <span class="feat-icon">🔍</span>
-          <span class="feat-name">Syntax Highlighting</span>
-          <span class="feat-desc">Colour-coded Java keywords, types, strings, numbers, and comments for easy reading.</span>
-        </div>
-      </div>
-    </div>
+    <!-- Keyboard Shortcuts -->
+    <div class="shortcuts-card">
+      <h2 class="bento-section-title" style="margin-bottom: 8px;">
+        <span>⌨️</span> Power Shortcuts
+      </h2>
+      <p class="bento-text">
+        Debug like a pro without taking your hands off the keyboard:
+      </p>
 
-    <!-- Shortcuts -->
-    <div class="section-card">
-      <h2 class="section-title">⌨️ Keyboard Shortcuts</h2>
-      <table class="kbd-table">
+      <table class="shortcut-table">
         <thead>
-          <tr><th>Key</th><th>Action</th></tr>
+          <tr>
+            <th>Shortcut</th>
+            <th>Action</th>
+            <th>Context</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td><kbd>→</kbd> Right Arrow</td><td>Step forward to the next executed line</td></tr>
-          <tr><td><kbd>←</kbd> Left Arrow</td><td>Step backward to the previous state</td></tr>
-          <tr><td><kbd>Space</kbd></td><td>Toggle auto-play / pause execution playback</td></tr>
+          <tr>
+            <td><kbd>→</kbd> Right Arrow</td>
+            <td>Step forward one line</td>
+            <td>Visualization Mode</td>
+          </tr>
+          <tr>
+            <td><kbd>←</kbd> Left Arrow</td>
+            <td>Step backward to previous state</td>
+            <td>Visualization Mode</td>
+          </tr>
+          <tr>
+            <td><kbd>Space</kbd></td>
+            <td>Toggle auto-play / pause execution playback</td>
+            <td>Visualization Mode</td>
+          </tr>
+          <tr>
+            <td><kbd>Tab</kbd></td>
+            <td>Insert 4 spaces indentation</td>
+            <td>Editor Mode</td>
+          </tr>
+          <tr>
+            <td><kbd>Enter</kbd></td>
+            <td>Smart auto-indent following curly braces</td>
+            <td>Editor Mode</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -587,11 +575,13 @@
   </main>
 
   <!-- Footer -->
-  <footer class="about-footer">
+  <footer class="footer">
     <p>
-      Created by <a href="https://github.com/Bhavesh3961" target="_blank">Bhavesh3961</a>
+      Crafted with precision by <a href="https://github.com/Bhavesh3961" target="_blank">Bhavesh3961</a>
       &nbsp;•&nbsp;
-      <a href="https://github.com/Bhavesh3961/Java-step-debugger" target="_blank">GitHub Repository</a>
+      <a href="https://github.com/Bhavesh3961/Java-step-debugger" target="_blank">GitHub</a>
+      &nbsp;•&nbsp;
+      <a href="https://forbegginers.vercel.app/" target="_blank">Vercel Deployment</a>
       &nbsp;•&nbsp;
       MIT License
     </p>
