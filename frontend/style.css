@@ -2,6 +2,22 @@
    Java Step Debugger - Exact Visualizer Styling
    ========================================================================== */
 
+@font-face {
+  font-family: 'Victor Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('assets/fonts/VictorMono-VariableFont_wght.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Victor Mono';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('assets/fonts/VictorMono-Italic-VariableFont_wght.woff2') format('woff2');
+}
+
 :root {
   --bg-app: #0e1014;
   --bg-panel: #14171e;
@@ -31,7 +47,7 @@
   --syn-bracket-1: #da70d6;    /* Rainbow Bracket L1: Magenta Pink */
   --syn-bracket-2: #169fff;    /* Rainbow Bracket L2: Sky Blue */
 
-  --font-mono: 'Victor Mono', 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, Menlo, monospace;
+  --font-mono: 'Victor Mono', monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -360,7 +376,7 @@ body {
   margin: 0;
   border: none;
   font-family: var(--font-mono);
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 24px;
   tab-size: 4;
   -moz-tab-size: 4;
@@ -406,7 +422,7 @@ body {
   outline: none;
   resize: none;
   font-family: var(--font-mono);
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 24px;
   tab-size: 4;
   -moz-tab-size: 4;
@@ -415,7 +431,7 @@ body {
   overflow: auto;
   background: transparent;
   color: transparent;
-  caret-color: #60a5fa;
+  caret-color: #38bdf8;
   z-index: 2;
   box-sizing: border-box;
   letter-spacing: 0px;
