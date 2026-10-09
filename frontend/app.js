@@ -17,14 +17,22 @@ const BACKEND_URL = (typeof window.BACKEND_URL !== 'undefined' && window.BACKEND
 // ---------------------------------------------------------------------------
 // Java Syntax Sets
 // ---------------------------------------------------------------------------
-const JAVA_KEYWORDS = new Set([
-  'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char',
-  'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum',
-  'extends', 'final', 'finally', 'float', 'for', 'goto', 'if', 'implements',
-  'import', 'instanceof', 'int', 'interface', 'long', 'native', 'new',
-  'package', 'private', 'protected', 'public', 'return', 'short', 'static',
-  'strictfp', 'super', 'switch', 'synchronized', 'this', 'throw', 'throws',
-  'transient', 'try', 'void', 'volatile', 'while', 'record', 'var'
+const JAVA_CONTROL_KEYWORDS = new Set([
+  'while', 'for', 'do', 'if', 'else', 'switch', 'case', 'default',
+  'break', 'continue', 'return', 'try', 'catch', 'finally', 'throw',
+  'throws', 'yield'
+]);
+
+const JAVA_STORAGE_KEYWORDS = new Set([
+  'abstract', 'assert', 'class', 'const', 'enum', 'extends', 'final',
+  'goto', 'implements', 'import', 'instanceof', 'interface', 'native',
+  'new', 'package', 'private', 'protected', 'public', 'record',
+  'sealed', 'static', 'strictfp', 'super', 'synchronized', 'this',
+  'transient', 'volatile', 'var'
+]);
+
+const JAVA_PRIMITIVE_TYPES = new Set([
+  'boolean', 'byte', 'char', 'double', 'float', 'int', 'long', 'short', 'void'
 ]);
 
 const JAVA_BUILTIN_TYPES = new Set([
@@ -290,10 +298,12 @@ class DebuggerApp {
 
     // 2. Update Syntax Highlight Layer
     let highlightHtml = '';
+    let bracketDepth = 0;
     lines.forEach((lineText, idx) => {
       const lineNum = idx + 1;
-      const highlightedTokens = this.highlightJavaLine(lineText);
-      highlightHtml += `<div class="editor-line" id="code-line-${lineNum}">${highlightedTokens}</div>`;
+      const { html, nextDepth } = this.highlightJavaLine(lineText, bracketDepth);
+      bracketDepth = nextDepth;
+      highlightHtml += `<div class="editor-line" id="code-line-${lineNum}">${html}</div>`;
     });
     this.editorHighlightEl.innerHTML = highlightHtml;
   }
@@ -301,33 +311,104 @@ class DebuggerApp {
   // -------------------------------------------------------------------------
   // Syntax Tokenizer for Java
   // -------------------------------------------------------------------------
-  highlightJavaLine(line) {
-    if (!line) return '&nbsp;';
+  highlightJavaLine(line, currentBracketDepth = 0) {
+    if (!line) return { html: '&nbsp;', nextDepth: currentBracketDepth };
 
-    const tokenRegex = /(\/\/.*$|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?(?:[fFdDlL])?\b|[a-zA-Z_$][a-zA-Z0-9_$]*|[{}()\[\].,;+\-*/%&|^!=<>?:]+|\s+)/g;
+    let indentHtml = '';
+    let codeStr = line;
+    const indentMatch = line.match(/^ +/);
+    if (indentMatch) {
+      const totalSpaces = indentMatch[0].length;
+      const guideCount = Math.floor(totalSpaces / 4);
+      const remSpaces = totalSpaces % 4;
+      for (let g = 0; g < guideCount; g++) {
+        indentHtml += '<span class="indent-guide">    </span>';
+      }
+      if (remSpaces > 0) {
+        indentHtml += ' '.repeat(remSpaces);
+      }
+      codeStr = line.slice(totalSpaces);
+    }
 
-    let highlighted = '';
+    if (!codeStr) {
+      return { html: indentHtml || '&nbsp;', nextDepth: currentBracketDepth };
+    }
+
+    const tokenRegex = /(\/\/.*$|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?(?:[fFdDlL])?\b|[a-zA-Z_$][a-zA-Z0-9_$]*|[{}()\[\]]|==|!=|<=|>=|&&|\|\||\+\+|--|[.,;+\-*\/%&|^!=<>?:]+|\s+)/g;
+    const tokens = [];
     let match;
+    while ((match = tokenRegex.exec(codeStr)) !== null) {
+      tokens.push(match[0]);
+    }
 
-    while ((match = tokenRegex.exec(line)) !== null) {
-      const token = match[0];
-
+    let highlighted = indentHtml;
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      if (token.trim() === '') {
+        highlighted += token;
+        continue;
+      }
       if (token.startsWith('//') || token.startsWith('/*')) {
         highlighted += `<span class="syn-com">${this.escapeHtml(token)}</span>`;
-      } else if (token.startsWith('"') || token.startsWith("'")) {
+        continue;
+      }
+      if (token.startsWith('"') || token.startsWith("'")) {
         highlighted += `<span class="syn-str">${this.escapeHtml(token)}</span>`;
-      } else if (/^\d/.test(token)) {
+        continue;
+      }
+      if (/^\d/.test(token)) {
         highlighted += `<span class="syn-num">${this.escapeHtml(token)}</span>`;
-      } else if (JAVA_KEYWORDS.has(token)) {
+        continue;
+      }
+
+      let prevNonSpace = '';
+      for (let j = i - 1; j >= 0; j--) {
+        if (tokens[j].trim() !== '') { prevNonSpace = tokens[j]; break; }
+      }
+      let nextNonSpace = '';
+      for (let j = i + 1; j < tokens.length; j++) {
+        if (tokens[j].trim() !== '') { nextNonSpace = tokens[j]; break; }
+      }
+
+      // Inlay parameter hint pattern: identifier followed by ':' inside call argument list
+      if (nextNonSpace === ':' && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(token) && (prevNonSpace === '(' || prevNonSpace === ',')) {
+        highlighted += `<span class="syn-hint">${this.escapeHtml(token)}:</span>`;
+        if (i + 1 < tokens.length && tokens[i + 1] === ':') {
+          i++;
+        }
+        continue;
+      }
+
+      if (JAVA_CONTROL_KEYWORDS.has(token)) {
+        highlighted += `<span class="syn-kw-ctrl">${this.escapeHtml(token)}</span>`;
+      } else if (JAVA_STORAGE_KEYWORDS.has(token)) {
         highlighted += `<span class="syn-kw">${this.escapeHtml(token)}</span>`;
-      } else if (JAVA_BUILTIN_TYPES.has(token) || /^[A-Z][a-zA-Z0-9_$]*$/.test(token)) {
+      } else if (JAVA_PRIMITIVE_TYPES.has(token) || JAVA_BUILTIN_TYPES.has(token) || /^[A-Z][a-zA-Z0-9_$]*$/.test(token)) {
         highlighted += `<span class="syn-type">${this.escapeHtml(token)}</span>`;
+      } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(token) && nextNonSpace === '(') {
+        highlighted += `<span class="syn-fn">${this.escapeHtml(token)}</span>`;
+      } else if (prevNonSpace === '.' && (token === 'out' || token === 'in' || token === 'err' || token === 'length')) {
+        highlighted += `<span class="syn-field">${this.escapeHtml(token)}</span>`;
+      } else if (token === '{' || token === '(' || token === '[') {
+        const bClass = `bracket-${currentBracketDepth % 3}`;
+        currentBracketDepth++;
+        highlighted += `<span class="syn-bracket ${bClass}">${this.escapeHtml(token)}</span>`;
+      } else if (token === '}' || token === ')' || token === ']') {
+        currentBracketDepth = Math.max(0, currentBracketDepth - 1);
+        const bClass = `bracket-${currentBracketDepth % 3}`;
+        highlighted += `<span class="syn-bracket ${bClass}">${this.escapeHtml(token)}</span>`;
+      } else if (/^[+\-*\/%=!<>?&|:~^]+$/.test(token)) {
+        highlighted += `<span class="syn-op">${this.escapeHtml(token)}</span>`;
+      } else if (/^[.,;:]+$/.test(token)) {
+        highlighted += `<span class="syn-punc">${this.escapeHtml(token)}</span>`;
+      } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(token)) {
+        highlighted += `<span class="syn-var">${this.escapeHtml(token)}</span>`;
       } else {
         highlighted += this.escapeHtml(token);
       }
     }
 
-    return highlighted || '&nbsp;';
+    return { html: highlighted, nextDepth: currentBracketDepth };
   }
 
   escapeHtml(str) {
