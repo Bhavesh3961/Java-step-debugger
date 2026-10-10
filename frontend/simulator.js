@@ -26,13 +26,18 @@ class JavaSimulator {
     let currentOutput = '';
     const varsRegistry = {};
     const callStack = [{ method: 'main', line: 1 }];
+    let currentRunningLine = 1;
 
     // Smart stdin normalization
     let cleanStdin = (stdin || '').replace(/\\n/g, '\n');
     const needsInput = Boolean(sourceCode.match(/\b(Scanner|System\.in|BufferedReader|readLine)\b/));
     if (needsInput && !cleanStdin.trim()) {
-      if (sourceCode.includes('-1')) {
+      if (sourceCode.includes('9999')) {
+        cleanStdin = '72\n2\n8\n8\n11\n9999\n';
+      } else if (sourceCode.includes('-1')) {
         cleanStdin = '1\n2\n3\n-1\n';
+      } else if (sourceCode.match(/\b0\b/) && sourceCode.includes('while')) {
+        cleanStdin = '1\n2\n3\n0\n';
       } else {
         cleanStdin = '3\n';
       }
@@ -44,9 +49,15 @@ class JavaSimulator {
     let lineIdx = 0;
 
     const _builtinScanner = {
+      _checkInputOrThrow: (type) => {
+        const err = new Error(`NoSuchElementException: Scanner reached end of input (stdin) while reading ${type} on line ${currentRunningLine}. Please provide values in the Program Input box.`);
+        err.__waitingForInput = true;
+        err.__line = currentRunningLine;
+        throw err;
+      },
       nextInt: () => {
         if (tokenIdx >= rawTokens.length) {
-          throw new Error('NoSuchElementException: Scanner reached end of input (stdin). Please provide values in the Program Input box.');
+          _builtinScanner._checkInputOrThrow('integer');
         }
         const val = parseInt(rawTokens[tokenIdx++], 10);
         if (isNaN(val)) throw new Error(`InputMismatchException: Expected integer, got "${rawTokens[tokenIdx - 1]}"`);
@@ -54,22 +65,22 @@ class JavaSimulator {
       },
       nextDouble: () => {
         if (tokenIdx >= rawTokens.length) {
-          throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+          _builtinScanner._checkInputOrThrow('double');
         }
         const val = parseFloat(rawTokens[tokenIdx++]);
         if (isNaN(val)) throw new Error(`InputMismatchException: Expected double, got "${rawTokens[tokenIdx - 1]}"`);
         return val;
       },
       nextFloat: () => {
-        if (tokenIdx >= rawTokens.length) throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        if (tokenIdx >= rawTokens.length) _builtinScanner._checkInputOrThrow('float');
         return parseFloat(rawTokens[tokenIdx++]);
       },
       nextLong: () => {
-        if (tokenIdx >= rawTokens.length) throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        if (tokenIdx >= rawTokens.length) _builtinScanner._checkInputOrThrow('long');
         return parseInt(rawTokens[tokenIdx++], 10);
       },
       next: () => {
-        if (tokenIdx >= rawTokens.length) throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        if (tokenIdx >= rawTokens.length) _builtinScanner._checkInputOrThrow('token');
         return rawTokens[tokenIdx++];
       },
       nextLine: () => {
@@ -79,7 +90,7 @@ class JavaSimulator {
         if (tokenIdx < rawTokens.length) {
           return rawTokens[tokenIdx++];
         }
-        throw new Error('NoSuchElementException: Scanner reached end of input (stdin). Please provide values in the Program Input box.');
+        _builtinScanner._checkInputOrThrow('line');
       },
       hasNext: () => tokenIdx < rawTokens.length,
       hasNextInt: () => tokenIdx < rawTokens.length && !isNaN(parseInt(rawTokens[tokenIdx], 10)),
@@ -112,7 +123,12 @@ class JavaSimulator {
       return String(val);
     }
 
+    function setRunningLine(line) {
+      currentRunningLine = line;
+    }
+
     function recordStep(line, method) {
+      currentRunningLine = line;
       if (steps.length >= 1000) {
         throw new Error('Maximum execution steps (1000) reached. Loop limit exceeded to prevent browser freeze.');
       }
@@ -491,18 +507,34 @@ class JavaSimulator {
 
       // If / else if / else
       if (line.includes('else if')) {
-        line = line.replace(/(?:\}\s*)?else\s+if\s*\((.*?)\)\s*\{/g, (m, cond) => {
-          return `} else if (recordStep(${lineNum}) && (${cond})) {`;
-        });
+        if (line.includes('{')) {
+          line = line.replace(/(?:\}\s*)?else\s+if\s*\((.*?)\)\s*\{/g, (m, cond) => {
+            return `} else if (recordStep(${lineNum}) && (${cond})) {`;
+          });
+        } else {
+          line = line.replace(/(?:\}\s*)?else\s+if\s*\(([^)]+)\)\s*(?!\{)([^;]+;)/g, (m, cond, stmt) => {
+            return `} else if (recordStep(${lineNum}) && (${cond})) { ${stmt} }`;
+          });
+        }
       } else if (/(\}|\s|^)else\s*\{/.test(line)) {
         line = line.replace(/(?:\}\s*)?else\s*\{/g, () => {
           return `} else { recordStep(${lineNum});`;
         });
-      } else if (/(?<!else\s*)if\s*\(/.test(line)) {
-        line = line.replace(/(?<!else\s*)if\s*\((.*?)\)\s*\{/g, (m, cond) => {
-          scopeDepth++;
-          return `recordStep(${lineNum}); if (${cond}) {`;
+      } else if (/(\}|\s|^)else\s+(?!if|\{)/.test(line)) {
+        line = line.replace(/(?:\}\s*)?else\s+(?!if|\{)([^;]+;)/g, (m, stmt) => {
+          return `} else { recordStep(${lineNum}); ${stmt} }`;
         });
+      } else if (/(?<!else\s*)if\s*\(/.test(line)) {
+        if (line.includes('{')) {
+          line = line.replace(/(?<!else\s*)if\s*\((.*?)\)\s*\{/g, (m, cond) => {
+            scopeDepth++;
+            return `recordStep(${lineNum}); if (${cond}) {`;
+          });
+        } else {
+          line = line.replace(/(?<!else\s*)if\s*\(([^)]+)\)\s*(?!\{)([^;]+;)/g, (m, cond, stmt) => {
+            return `recordStep(${lineNum}); if (${cond}) { ${stmt} }`;
+          });
+        }
       }
 
       // Break / continue
@@ -512,25 +544,25 @@ class JavaSimulator {
 
       // Custom object instantiation: Student s = new Student("Alex", 10);
       line = line.replace(/\b([A-Z][a-zA-Z0-9_]*)\s+(\w+)\s*=\s*new\s+\1\s*\((.*?)\);/g, (m, cls, v, args) => {
-        return `let ${v} = new ${cls}(${args}); regVar('${v}', '${cls}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
+        return `setRunningLine(${lineNum}); let ${v} = new ${cls}(${args}); regVar('${v}', '${cls}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
-      // Variable declaration with assignment: int number = 1;
-      line = line.replace(/\b(int|long)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
-        return `let ${v} = Math.trunc(${val}); regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
+      // Variable declaration with assignment: int number = 1; (tolerates missing semicolon for beginners)
+      line = line.replace(/\b(int|long)\s+(\w+)\s*=\s*(.+?);?$/g, (m, type, v, val) => {
+        return `setRunningLine(${lineNum}); let ${v} = Math.trunc(${val}); regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
-      line = line.replace(/\b(double|float|boolean|char|String)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
-        return `let ${v} = ${val}; regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
+      line = line.replace(/\b(double|float|boolean|char|String)\s+(\w+)\s*=\s*(.+?);?$/g, (m, type, v, val) => {
+        return `setRunningLine(${lineNum}); let ${v} = ${val}; regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
       // Variable declaration without assignment: int x;
-      line = line.replace(/\b(int|double|float|long)\s+(\w+);/g, (m, type, v) => {
+      line = line.replace(/\b(int|double|float|long)\s+(\w+);?$/g, (m, type, v) => {
         return `let ${v} = 0; regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
-      line = line.replace(/\bboolean\s+(\w+);/g, (m, v) => {
+      line = line.replace(/\bboolean\s+(\w+);?$/g, (m, v) => {
         return `let ${v} = false; regVar('${v}', 'boolean', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
-      line = line.replace(/\bString\s+(\w+);/g, (m, v) => {
+      line = line.replace(/\bString\s+(\w+);?$/g, (m, v) => {
         return `let ${v} = null; regVar('${v}', 'String', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
@@ -575,6 +607,7 @@ class JavaSimulator {
 
     try {
       const runner = new Function(
+        'setRunningLine',
         'recordStep',
         'regVar',
         'clearVarsAtDepth',
@@ -594,6 +627,7 @@ class JavaSimulator {
         script
       );
       runner(
+        setRunningLine,
         recordStep,
         regVar,
         clearVarsAtDepth,
@@ -632,11 +666,24 @@ class JavaSimulator {
 
       return { success: true, steps, totalSteps: steps.length };
     } catch (err) {
+      const isInputWait = Boolean(err.__waitingForInput || (err.message && err.message.includes('NoSuchElementException')));
+      if (steps.length > 0) {
+        return {
+          success: true,
+          waitingForInput: isInputWait,
+          waitingLine: err.__line || (steps[steps.length - 1] ? steps[steps.length - 1].line : 1),
+          waitingMessage: err.message,
+          error: isInputWait ? null : err.message,
+          steps,
+          totalSteps: steps.length
+        };
+      }
       return {
         success: false,
+        waitingForInput: isInputWait,
         error: err.message,
-        steps,
-        totalSteps: steps.length
+        steps: [],
+        totalSteps: 0
       };
     }
   }

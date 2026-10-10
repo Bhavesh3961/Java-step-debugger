@@ -61,20 +61,12 @@
           </div>
         </div>
 
-        <!-- Variables / Call Frame Card & Array Tool -->
+        <!-- Variables / Call Frame Card -->
         <div class="variables-card" id="variablesCard">
           <div class="variables-header">
             <div class="header-top-row">
-              <div class="frame-tag" id="currentFrameTag">main:5</div>
-              <div class="panel-tabs" role="tablist">
-                <button type="button" class="panel-tab active" id="tabVars" aria-selected="true" title="Variables Table">
-                  <span>📋 Variables</span>
-                </button>
-                <button type="button" class="panel-tab" id="tabArrayTool" aria-selected="false" title="Array & Collection Tool">
-                  <span>📦 Array Tool</span>
-                  <span class="array-badge hidden" id="arrayCountBadge">0</span>
-                </button>
-              </div>
+              <div class="frame-tag" id="currentFrameTag">main:1</div>
+              <span class="panel-title">Variables</span>
             </div>
             <div class="vars-columns" id="varsColumnsHeader">
               <span class="col-name">Name</span>
@@ -87,16 +79,6 @@
               <span class="var-value">1</span>
             </div>
           </div>
-
-          <!-- Dedicated Visual Array & Collection Tool Inspector Body -->
-          <div class="array-tool-body hidden" id="arrayToolBody">
-            <div class="array-tool-empty" id="arrayToolEmpty">
-              <span class="empty-icon">📦</span>
-              <span class="empty-title">Array Tool</span>
-              <span class="empty-desc">No active array or ArrayList in current frame. Step into an array initialization or ArrayList.add() to inspect elements & indices.</span>
-            </div>
-            <div class="array-tool-cards" id="arrayToolCards"></div>
-          </div>
         </div>
       </div>
 
@@ -107,13 +89,14 @@
       </div>
 
       <!-- Program Input Bar for Scanner / System.in -->
-      <div class="stdin-section">
-        <div class="stdin-bar">
+      <div class="stdin-section" id="stdinSection">
+        <div class="stdin-bar" id="stdinBar">
           <div class="stdin-bar-header">
             <div class="stdin-title-group">
               <span class="stdin-icon">⌨️</span>
               <label for="stdinInput" class="stdin-label">Program Input (stdin):</label>
-              <span class="stdin-hint">Auto-piped to Scanner(System.in) • Supports space or newline separated</span>
+              <span class="stdin-hint" id="stdinHint">Auto-piped to Scanner(System.in) • Supports space or newline separated</span>
+              <span class="stdin-pulse-badge hidden" id="stdinPulseBadge">⚡ Line asking for input — type here</span>
             </div>
             <div class="stdin-actions">
               <button type="button" id="formatStdinBtn" class="btn-stdin-format" title="Toggle between single-line spaces and separate lines">
@@ -121,7 +104,7 @@
               </button>
             </div>
           </div>
-          <textarea id="stdinInput" class="stdin-input stdin-textarea" rows="2" placeholder="e.g. 7 2 5 -1 (values for Scanner / System.in)">7 2 5 -1</textarea>
+          <textarea id="stdinInput" class="stdin-input stdin-textarea" rows="2" placeholder="e.g. 7 2 5 9999 (values for Scanner / System.in)">7 2 5 9999</textarea>
         </div>
       </div>
 

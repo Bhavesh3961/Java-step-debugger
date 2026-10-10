@@ -84,28 +84,29 @@ class DebuggerApp {
     this.errorMessageEl       = document.getElementById('errorMessage');
     this.errorDetailsEl       = document.getElementById('errorDetails');
     this.stdinInputEl         = document.getElementById('stdinInput');
-    this.tabVarsEl            = document.getElementById('tabVars');
-    this.tabArrayToolEl       = document.getElementById('tabArrayTool');
-    this.arrayCountBadgeEl    = document.getElementById('arrayCountBadge');
-    this.varsColumnsHeaderEl  = document.getElementById('varsColumnsHeader');
-    this.arrayToolBodyEl      = document.getElementById('arrayToolBody');
-    this.arrayToolEmptyEl     = document.getElementById('arrayToolEmpty');
-    this.arrayToolCardsEl     = document.getElementById('arrayToolCards');
+    this.stdinBarEl           = document.getElementById('stdinBar');
+    this.stdinPulseBadgeEl    = document.getElementById('stdinPulseBadge');
     this.formatStdinBtnEl     = document.getElementById('formatStdinBtn');
-    this.activeTab            = 'vars';
+    this.currentTrace         = null;
+    this.stdinDebounceTimer   = null;
   }
 
   // -------------------------------------------------------------------------
   bindEvents() {
-    // Array Tool and Variables Tab switching
-    if (this.tabVarsEl) {
-      this.tabVarsEl.addEventListener('click', () => this.switchTab('vars'));
-    }
-    if (this.tabArrayToolEl) {
-      this.tabArrayToolEl.addEventListener('click', () => this.switchTab('arrayTool'));
-    }
     if (this.formatStdinBtnEl) {
       this.formatStdinBtnEl.addEventListener('click', () => this.toggleFormatStdin());
+    }
+
+    // Auto-update execution when user types or presses Enter in Program Input box
+    if (this.stdinInputEl) {
+      this.stdinInputEl.addEventListener('input', () => this.onStdinInput());
+      this.stdinInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || !e.shiftKey)) {
+          e.preventDefault();
+          const code = this.codeEditorEl.value.trim() || this.sourceCode;
+          this.executeCode(code, this.stdinInputEl.value, true);
+        }
+      });
     }
 
     // Stepping and navigation
@@ -513,11 +514,12 @@ class DebuggerApp {
   }
 
   // -------------------------------------------------------------------------
-  applyTrace(code, traceData) {
+  applyTrace(code, traceData, targetStep = null) {
     this.pauseAutoPlay();
     this.clearError();
 
     this.sourceCode = code;
+    this.currentTrace = traceData;
     this.codeEditorEl.value = code;
     this.onCodeInput();
 
@@ -530,11 +532,14 @@ class DebuggerApp {
 
     this.stepSliderEl.min = '1';
     this.stepSliderEl.max = String(this.steps.length);
-    this.goToStep(this.steps.length > 1 ? 1 : 0);
+    let stepToOpen = (targetStep !== null && targetStep !== undefined && targetStep >= 0)
+      ? Math.min(targetStep, this.steps.length - 1)
+      : (this.steps.length > 1 ? 1 : 0);
+    this.goToStep(stepToOpen);
   }
 
   // -------------------------------------------------------------------------
-  async executeCode(code, stdin) {
+  async executeCode(code, stdin, preserveStep = false) {
     this.pauseAutoPlay();
     this.clearError();
 
@@ -543,12 +548,14 @@ class DebuggerApp {
 
     stdinValue = this.normalizeStdin(stdinValue, code);
 
+    const targetStep = preserveStep ? this.currentStep : null;
+
     // 1. Check matching embedded trace
     const cleanInputCode = code.trim().replace(/\r\n/g, '\n');
     for (const [key, tr] of Object.entries(this.embeddedTraces)) {
       const cleanTraceCode = (tr.code || '').trim().replace(/\r\n/g, '\n');
       if (cleanInputCode === cleanTraceCode) {
-        this.applyTrace(code, tr);
+        this.applyTrace(code, tr, targetStep);
         return;
       }
     }
@@ -565,14 +572,13 @@ class DebuggerApp {
 
         if (resp.ok) {
           const data = await resp.json();
-          this.setLoadingState(false);
           if (data.success && data.steps && data.steps.length > 0) {
-            this.applyTrace(code, data);
-            return;
-          } else if (!data.success) {
-            this.showError(data.message || 'Compilation Error', data.error || 'Failed to trace code.');
+            this.setLoadingState(false);
+            this.applyTrace(code, data, targetStep);
             return;
           }
+          // If backend failed (e.g. unclosed braces or minor syntax), fall back to simulator!
+          console.warn('Backend trace returned no steps, attempting simulator fallback:', data);
         }
       } catch (err) {
         console.warn('Local JDI backend unavailable, using simulator:', err);
@@ -588,8 +594,8 @@ class DebuggerApp {
         const result = sim.simulate(code, stdinValue);
         this.setLoadingState(false);
 
-        if (result.success && result.steps && result.steps.length > 0) {
-          this.applyTrace(code, result);
+        if (result.steps && result.steps.length > 0) {
+          this.applyTrace(code, result, targetStep);
           return;
         } else if (!result.success) {
           this.showError('Compilation / Execution Error', result.error || 'Failed to execute Java code.');
@@ -670,63 +676,21 @@ class DebuggerApp {
     // 4. Update Current Frame Tag: e.g. "main:5"
     this.currentFrameTagEl.textContent = step.frame || `line ${step.line}`;
 
-    // 5. Update Variables Table & Array Tool
+    // 5. Update Variables Table
     this.variablesBodyEl.innerHTML = '';
-    const arrayVariables = [];
-    const intPointers = {};
-
     if (step.variables && step.variables.length > 0) {
-      // Find integer pointers for array cells (e.g. index, i, j, k)
-      step.variables.forEach(v => {
-        if (v.type === 'int' || v.type === 'long' || /^-?\d+$/.test(v.value)) {
-          const valNum = parseInt(v.value, 10);
-          if (!isNaN(valNum)) {
-            intPointers[v.name] = valNum;
-          }
-        }
-      });
-
       step.variables.forEach(v => {
         const row = document.createElement('div');
         row.className = 'var-row';
-
-        const isArr = this.parseArrayVariable(v);
-        if (isArr) {
-          arrayVariables.push({ varInfo: v, parsed: isArr });
-        }
-
-        let valHtml = this.escapeHtml(v.value);
-        if (isArr) {
-          valHtml = `
-            <span>${this.escapeHtml(v.value)}</span>
-            <button type="button" class="array-inspect-btn" data-var="${this.escapeHtml(v.name)}" title="Inspect in Array Tool">
-              📦 View in Array Tool
-            </button>
-          `;
-        }
-
         row.innerHTML = `
           <span class="var-name">${this.escapeHtml(v.name)}</span>
-          <span class="var-value">${valHtml}</span>
+          <span class="var-value">${this.escapeHtml(v.value)}</span>
         `;
         this.variablesBodyEl.appendChild(row);
-      });
-
-      // Bind inspect buttons
-      this.variablesBodyEl.querySelectorAll('.array-inspect-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.switchTab('arrayTool');
-          const targetCard = document.getElementById(`array-card-${btn.dataset.var}`);
-          if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth' });
-        });
       });
     } else {
       this.variablesBodyEl.innerHTML = '<div class="no-vars">(no variables in scope)</div>';
     }
-
-    // Render Array & Collection Tool Inspector
-    this.renderArrayTool(arrayVariables, intPointers);
 
     // 6. Update Call Stack (if recursive / multiple frames)
     if (step.callStack && step.callStack.length > 1) {
@@ -753,6 +717,9 @@ class DebuggerApp {
     // 9. Update Navigation Buttons state
     this.prevBtn.disabled = (index === 0);
     this.nextBtn.disabled = (index === this.steps.length - 1);
+
+    // 10. Check if current step line asks for input & flash input box
+    this.checkAndHighlightInputLine(step, index);
   }
 
   // -------------------------------------------------------------------------
@@ -789,34 +756,59 @@ class DebuggerApp {
   }
 
   // -------------------------------------------------------------------------
-  // Array Tool & Tab Switching
+  // Program Input (stdin) Interactions & Flashing Pulse
   // -------------------------------------------------------------------------
-  switchTab(tabName) {
-    this.activeTab = tabName;
-    if (tabName === 'arrayTool') {
-      if (this.tabArrayToolEl) {
-        this.tabArrayToolEl.classList.add('active');
-        this.tabArrayToolEl.setAttribute('aria-selected', 'true');
-      }
-      if (this.tabVarsEl) {
-        this.tabVarsEl.classList.remove('active');
-        this.tabVarsEl.setAttribute('aria-selected', 'false');
-      }
-      if (this.arrayToolBodyEl) this.arrayToolBodyEl.classList.remove('hidden');
-      if (this.variablesBodyEl) this.variablesBodyEl.classList.add('hidden');
-      if (this.varsColumnsHeaderEl) this.varsColumnsHeaderEl.classList.add('hidden');
+  onStdinInput() {
+    clearTimeout(this.stdinDebounceTimer);
+    this.stdinDebounceTimer = setTimeout(() => {
+      const code = this.codeEditorEl.value.trim() || this.sourceCode;
+      this.executeCode(code, this.stdinInputEl.value, true);
+    }, 350);
+  }
+
+  checkAndHighlightInputLine(step, index) {
+    if (!step) {
+      this.setInputFlashing(false);
+      return;
+    }
+
+    const lines = (this.sourceCode || '').split('\n');
+    const lineCode = (lines[step.line - 1] || '').trim();
+
+    // Check if line reads input via Scanner or System.in
+    const isScannerCall = Boolean(
+      (lineCode.match(/\b(scanner|sc|reader|System\.in)\b/i) &&
+       lineCode.match(/\b(next|nextLine|nextInt|nextDouble|nextFloat|nextLong|nextBoolean|read|readLine)\b/)) ||
+      lineCode.match(/\b(readLine|System\.in\.read)\b/) ||
+      lineCode.match(/\bInteger\.(?:valueOf|parseInt)\s*\(\s*(?:scanner|sc)\.nextLine\s*\(\s*\)\s*\)/)
+    );
+
+    // Also check if trace stopped waiting for more input at the final step
+    const isWaiting = Boolean(this.currentTrace && this.currentTrace.waitingForInput && index === this.steps.length - 1);
+
+    if (isScannerCall || isWaiting) {
+      this.setInputFlashing(true, step.line, isWaiting);
     } else {
-      if (this.tabVarsEl) {
-        this.tabVarsEl.classList.add('active');
-        this.tabVarsEl.setAttribute('aria-selected', 'true');
+      this.setInputFlashing(false);
+    }
+  }
+
+  setInputFlashing(flashing, lineNum, isWaiting) {
+    if (flashing) {
+      if (this.stdinBarEl) this.stdinBarEl.classList.add('flashing');
+      if (this.stdinInputEl) this.stdinInputEl.classList.add('flashing');
+      if (this.stdinPulseBadgeEl) {
+        this.stdinPulseBadgeEl.classList.remove('hidden');
+        if (isWaiting) {
+          this.stdinPulseBadgeEl.textContent = `⚡ Line ${lineNum} needs input to continue — type value here!`;
+        } else {
+          this.stdinPulseBadgeEl.textContent = `⚡ Line ${lineNum} is reading input — type value here`;
+        }
       }
-      if (this.tabArrayToolEl) {
-        this.tabArrayToolEl.classList.remove('active');
-        this.tabArrayToolEl.setAttribute('aria-selected', 'false');
-      }
-      if (this.variablesBodyEl) this.variablesBodyEl.classList.remove('hidden');
-      if (this.varsColumnsHeaderEl) this.varsColumnsHeaderEl.classList.remove('hidden');
-      if (this.arrayToolBodyEl) this.arrayToolBodyEl.classList.add('hidden');
+    } else {
+      if (this.stdinBarEl) this.stdinBarEl.classList.remove('flashing');
+      if (this.stdinInputEl) this.stdinInputEl.classList.remove('flashing');
+      if (this.stdinPulseBadgeEl) this.stdinPulseBadgeEl.classList.add('hidden');
     }
   }
 
@@ -839,12 +831,20 @@ class DebuggerApp {
     if (!stdinStr || !stdinStr.trim()) {
       const needsInput = Boolean(code.match(/\b(Scanner|System\.in|BufferedReader|readLine)\b/));
       if (needsInput) {
+        if (code.includes('9999')) return '72\n2\n8\n8\n11\n9999\n';
         if (code.includes('-1')) return '1\n2\n3\n-1\n';
+        if (code.match(/\b0\b/) && code.includes('while')) return '1\n2\n3\n0\n';
         return '3\n';
       }
       return '';
     }
     let cleaned = stdinStr.replace(/\\n/g, '\n');
+
+    // If code expects 9999 and input doesn't have 9999, auto-append to prevent loop exhaust
+    if (code.includes('9999') && !cleaned.includes('9999')) {
+      cleaned = cleaned.trim() + '\n9999\n';
+    }
+
     const lines = cleaned.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (lines.length <= 1) {
       const tokens = cleaned.trim().split(/[, \t]+/).filter(Boolean);
@@ -858,121 +858,6 @@ class DebuggerApp {
     }
     if (!cleaned.endsWith('\n')) cleaned += '\n';
     return cleaned;
-  }
-
-  parseArrayVariable(v) {
-    if (!v || !v.value) return null;
-    const val = v.value.trim();
-    const isArrayList = val.startsWith('ArrayList [') && val.endsWith(']');
-    const isArr = val.startsWith('[') && val.endsWith(']');
-    if (!isArrayList && !isArr && !v.type.includes('[]') && !v.type.includes('List')) return null;
-
-    let itemsStr = '';
-    let isList = false;
-    if (isArrayList) {
-      itemsStr = val.substring('ArrayList ['.length, val.length - 1).trim();
-      isList = true;
-    } else if (isArr) {
-      itemsStr = val.substring(1, val.length - 1).trim();
-    } else {
-      return null;
-    }
-
-    let elements = [];
-    if (itemsStr.length > 0) {
-      elements = itemsStr.split(/,\s*/).filter(s => s !== '');
-    }
-
-    return {
-      name: v.name,
-      type: v.type || (isList ? 'ArrayList' : 'Array'),
-      isList,
-      elements,
-      length: elements.length
-    };
-  }
-
-  renderArrayTool(arrayVariables, intPointers) {
-    if (!this.arrayToolCardsEl) return;
-
-    if (this.arrayCountBadgeEl) {
-      if (arrayVariables.length > 0) {
-        this.arrayCountBadgeEl.textContent = arrayVariables.length;
-        this.arrayCountBadgeEl.classList.remove('hidden');
-      } else {
-        this.arrayCountBadgeEl.classList.add('hidden');
-      }
-    }
-
-    if (arrayVariables.length === 0) {
-      if (this.arrayToolEmptyEl) this.arrayToolEmptyEl.classList.remove('hidden');
-      this.arrayToolCardsEl.innerHTML = '';
-      return;
-    }
-
-    if (this.arrayToolEmptyEl) this.arrayToolEmptyEl.classList.add('hidden');
-    let html = '';
-
-    arrayVariables.forEach(item => {
-      const { varInfo, parsed } = item;
-      const typeDisplay = parsed.isList ? 'ArrayList' : (varInfo.type || 'Array');
-      const sizeLabel = parsed.isList ? `size: ${parsed.length}` : `length: ${parsed.length}`;
-
-      html += `
-        <div class="array-card" id="array-card-${this.escapeHtml(varInfo.name)}">
-          <div class="array-card-header">
-            <span class="array-card-title">
-              <span class="array-card-icon">${parsed.isList ? '📋' : '🔢'}</span>
-              <span>${this.escapeHtml(varInfo.name)}</span>
-            </span>
-            <div class="array-card-meta">
-              <span class="array-type-tag">${this.escapeHtml(typeDisplay)}</span>
-              <span class="array-size-tag">${sizeLabel}</span>
-            </div>
-          </div>
-          <div class="array-cells-track">
-      `;
-
-      if (parsed.elements.length === 0) {
-        html += `<div class="empty-array-notice">Empty (${parsed.isList ? '0 elements' : 'length 0'})</div>`;
-      } else {
-        parsed.elements.forEach((elem, idx) => {
-          const matchingPointers = [];
-          for (const [pName, pVal] of Object.entries(intPointers)) {
-            if (pVal === idx) {
-              matchingPointers.push(pName);
-            }
-          }
-
-          const hasPointer = matchingPointers.length > 0;
-          const boxClass = hasPointer ? 'cell-value-box active-pointer' : 'cell-value-box';
-
-          let pointersHtml = '';
-          matchingPointers.forEach(p => {
-            pointersHtml += `<span class="pointer-pill">${this.escapeHtml(p)}</span>`;
-          });
-
-          html += `
-            <div class="array-cell-unit">
-              <span class="cell-index-label">[${idx}]</span>
-              <div class="${boxClass}" title="Index ${idx}: ${this.escapeHtml(elem)}">
-                ${this.escapeHtml(elem.replace(/^"|"$/g, ''))}
-              </div>
-              <div class="cell-pointers-list">
-                ${pointersHtml}
-              </div>
-            </div>
-          `;
-        });
-      }
-
-      html += `
-          </div>
-        </div>
-      `;
-    });
-
-    this.arrayToolCardsEl.innerHTML = html;
   }
 }
 

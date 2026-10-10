@@ -235,19 +235,34 @@ def prepare_code(raw_code: str) -> tuple[str, str, int]:
         line_offset = 1
 
     class_name = extract_main_class_name(code)
+
+    # Auto-close missing braces so incomplete typing doesn't fail compilation with parsing error
+    open_braces = code.count('{')
+    close_braces = code.count('}')
+    if open_braces > close_braces:
+        code += '\n' + ('}\n' * (open_braces - close_braces))
+
     return class_name, code, line_offset
 
 def normalize_stdin(stdin_data: str, user_code: str) -> str:
     if not stdin_data or not stdin_data.strip():
         needs_input = bool(re.search(r'\b(Scanner|System\.in|BufferedReader|readLine)\b', user_code))
         if needs_input:
+            if re.search(r'9999', user_code):
+                return "72\n2\n8\n8\n11\n9999\n"
             if re.search(r'==\s*-1|-1\s*==', user_code):
                 return "1\n2\n3\n-1\n"
+            if re.search(r'==\s*0|0\s*==|!=\s*0|0\s*!=', user_code):
+                return "1\n2\n3\n0\n"
             return "3\n"
         return ""
 
     # Unescape literal \n if user typed it
     cleaned = stdin_data.replace("\\n", "\n")
+
+    # If code uses 9999 as sentinel and stdin doesn't contain 9999, append it so while(true) doesn't run out of input!
+    if "9999" in user_code and "9999" not in cleaned:
+        cleaned = cleaned.rstrip() + "\n9999\n"
 
     # If input is a single line (or no newlines) with multiple space/comma separated tokens,
     # and the code uses Scanner/System.in, separate them by newlines so nextLine() reads line-by-line!
