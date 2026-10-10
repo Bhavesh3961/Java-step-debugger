@@ -59,6 +59,30 @@ EXAMPLES = {
     }
 }"""
     },
+    "remember_numbers": {
+        "title": "Remember These Numbers (ArrayList + Scanner)",
+        "defaultStdin": "7 2 5 -1",
+        "code": """import java.util.ArrayList;
+import java.util.Scanner;
+
+public class RememberTheseNumbers {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        ArrayList<Integer> numbers = new ArrayList<>();
+        while (true) {
+            int luku = Integer.valueOf(scanner.nextLine());
+            if (luku == -1) {
+                break;
+            }
+            numbers.add(luku);
+        }
+        for (int index = numbers.size() - 1; index >= 0; index--) {
+            System.out.println(numbers.get(index));
+        }
+    }
+}"""
+    },
     "factorial_recursion": {
         "title": "Factorial (Recursion)",
         "code": """public class Factorial {
@@ -213,6 +237,33 @@ def prepare_code(raw_code: str) -> tuple[str, str, int]:
     class_name = extract_main_class_name(code)
     return class_name, code, line_offset
 
+def normalize_stdin(stdin_data: str, user_code: str) -> str:
+    if not stdin_data or not stdin_data.strip():
+        needs_input = bool(re.search(r'\b(Scanner|System\.in|BufferedReader|readLine)\b', user_code))
+        if needs_input:
+            if re.search(r'==\s*-1|-1\s*==', user_code):
+                return "1\n2\n3\n-1\n"
+            return "3\n"
+        return ""
+
+    # Unescape literal \n if user typed it
+    cleaned = stdin_data.replace("\\n", "\n")
+
+    # If input is a single line (or no newlines) with multiple space/comma separated tokens,
+    # and the code uses Scanner/System.in, separate them by newlines so nextLine() reads line-by-line!
+    lines = [l for l in cleaned.splitlines() if l.strip()]
+    if len(lines) <= 1:
+        tokens = re.split(r'[, \t]+', cleaned.strip())
+        if len(tokens) > 1:
+            has_next_line = bool(re.search(r'\b(nextLine|readLine)\b', user_code))
+            all_numeric = all(re.match(r'^-?\d+(?:\.\d+)?$', t) for t in tokens)
+            if has_next_line or all_numeric:
+                cleaned = "\n".join(tokens) + "\n"
+
+    if not cleaned.endswith("\n"):
+        cleaned += "\n"
+    return cleaned
+
 def trace_java_code(user_code: str, stdin_data: str = "") -> dict:
     if not user_code or not user_code.strip():
         return {
@@ -221,10 +272,7 @@ def trace_java_code(user_code: str, stdin_data: str = "") -> dict:
             "message": "Please write or paste Java code."
         }
 
-    # If code uses Scanner/System.in and no stdin is provided, provide a sensible default like "3"
-    needs_input = bool(re.search(r'\b(Scanner|System\.in|BufferedReader|readLine)\b', user_code))
-    if needs_input and not stdin_data.strip():
-        stdin_data = "3\n"
+    stdin_data = normalize_stdin(stdin_data, user_code)
 
     class_name, processed_code, line_offset = prepare_code(user_code)
 

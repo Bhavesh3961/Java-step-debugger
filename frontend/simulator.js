@@ -10,6 +10,11 @@ if (!String.prototype.equals) {
     return this.toString() === (other !== null && other !== undefined ? other.toString() : null);
   };
 }
+if (!String.prototype.compareTo) {
+  String.prototype.compareTo = function(other) {
+    return this.localeCompare(String(other));
+  };
+}
 
 class JavaSimulator {
   constructor(options = {}) {
@@ -22,19 +27,64 @@ class JavaSimulator {
     const varsRegistry = {};
     const callStack = [{ method: 'main', line: 1 }];
 
-    // Tokenized stdin for Scanner
-    const rawTokens = (stdin || '').trim().split(/\s+/).filter(Boolean);
-    let tokenIdx = 0;
+    // Smart stdin normalization
+    let cleanStdin = (stdin || '').replace(/\\n/g, '\n');
+    const needsInput = Boolean(sourceCode.match(/\b(Scanner|System\.in|BufferedReader|readLine)\b/));
+    if (needsInput && !cleanStdin.trim()) {
+      if (sourceCode.includes('-1')) {
+        cleanStdin = '1\n2\n3\n-1\n';
+      } else {
+        cleanStdin = '3\n';
+      }
+    }
 
-    const scanner = {
-      nextInt: () => parseInt(rawTokens[tokenIdx++] || '0', 10),
-      nextDouble: () => parseFloat(rawTokens[tokenIdx++] || '0.0'),
-      nextFloat: () => parseFloat(rawTokens[tokenIdx++] || '0.0'),
-      nextLong: () => parseInt(rawTokens[tokenIdx++] || '0', 10),
-      next: () => rawTokens[tokenIdx++] || '',
-      nextLine: () => rawTokens[tokenIdx++] || '',
+    const stdinLines = cleanStdin.split(/\r?\n/).filter(l => l.length > 0);
+    const rawTokens = cleanStdin.trim().split(/\s+/).filter(Boolean);
+    let tokenIdx = 0;
+    let lineIdx = 0;
+
+    const _builtinScanner = {
+      nextInt: () => {
+        if (tokenIdx >= rawTokens.length) {
+          throw new Error('NoSuchElementException: Scanner reached end of input (stdin). Please provide values in the Program Input box.');
+        }
+        const val = parseInt(rawTokens[tokenIdx++], 10);
+        if (isNaN(val)) throw new Error(`InputMismatchException: Expected integer, got "${rawTokens[tokenIdx - 1]}"`);
+        return val;
+      },
+      nextDouble: () => {
+        if (tokenIdx >= rawTokens.length) {
+          throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        }
+        const val = parseFloat(rawTokens[tokenIdx++]);
+        if (isNaN(val)) throw new Error(`InputMismatchException: Expected double, got "${rawTokens[tokenIdx - 1]}"`);
+        return val;
+      },
+      nextFloat: () => {
+        if (tokenIdx >= rawTokens.length) throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        return parseFloat(rawTokens[tokenIdx++]);
+      },
+      nextLong: () => {
+        if (tokenIdx >= rawTokens.length) throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        return parseInt(rawTokens[tokenIdx++], 10);
+      },
+      next: () => {
+        if (tokenIdx >= rawTokens.length) throw new Error('NoSuchElementException: Scanner reached end of input (stdin).');
+        return rawTokens[tokenIdx++];
+      },
+      nextLine: () => {
+        if (stdinLines.length > 1 && lineIdx < stdinLines.length) {
+          return stdinLines[lineIdx++];
+        }
+        if (tokenIdx < rawTokens.length) {
+          return rawTokens[tokenIdx++];
+        }
+        throw new Error('NoSuchElementException: Scanner reached end of input (stdin). Please provide values in the Program Input box.');
+      },
       hasNext: () => tokenIdx < rawTokens.length,
       hasNextInt: () => tokenIdx < rawTokens.length && !isNaN(parseInt(rawTokens[tokenIdx], 10)),
+      hasNextLine: () => (stdinLines.length > 1 ? lineIdx < stdinLines.length : tokenIdx < rawTokens.length),
+      hasNextDouble: () => tokenIdx < rawTokens.length && !isNaN(parseFloat(rawTokens[tokenIdx])),
       __isScanner: true
     };
 
@@ -45,13 +95,20 @@ class JavaSimulator {
         return '[' + val.map(formatVal).join(', ') + ']';
       }
       if (typeof val === 'object' && val.__isArrayList) {
-        return '[' + val.items.map(formatVal).join(', ') + ']';
+        return 'ArrayList [' + val.items.map(formatVal).join(', ') + ']';
       }
       if (typeof val === 'object' && val.__className) {
         let f = Object.keys(val).filter(k => !k.startsWith('__')).map(k => `${k}=${formatVal(val[k])}`).join(', ');
         return `${val.__className}{${f}}`;
       }
+      if (typeof val === 'object' && val.constructor && val.constructor.name && val.constructor.name !== 'Object') {
+        const clsName = val.constructor.name;
+        const keys = Object.keys(val).filter(k => !k.startsWith('__'));
+        const f = keys.map(k => `${k}=${formatVal(val[k])}`).join(', ');
+        return `${clsName}{${f}}`;
+      }
       if (typeof val === 'boolean') return val ? 'true' : 'false';
+      if (typeof val === 'string') return `"${val}"`;
       return String(val);
     }
 
@@ -85,8 +142,16 @@ class JavaSimulator {
       return true;
     }
 
-    function regVar(name, type, getter) {
-      varsRegistry[name] = { type, get: getter };
+    function regVar(name, type, getter, depth = 1) {
+      varsRegistry[name] = { type, get: getter, depth };
+    }
+
+    function clearVarsAtDepth(depth) {
+      for (const name of Object.keys(varsRegistry)) {
+        if (varsRegistry[name] && varsRegistry[name].depth > depth) {
+          delete varsRegistry[name];
+        }
+      }
     }
 
     function print(s) {
@@ -97,32 +162,185 @@ class JavaSimulator {
       currentOutput += ((s !== undefined && s !== null) ? String(s) : '') + '\n';
     }
 
-    // Java collections and utilities
+    // Java Collections & Utilities
     class JavaArrayList {
-      constructor() {
-        this.items = [];
+      constructor(init) {
+        this.items = Array.isArray(init) ? [...init] : [];
         this.__isArrayList = true;
       }
-      add(x) { this.items.push(x); return true; }
-      get(i) { return this.items[i]; }
-      set(i, x) { this.items[i] = x; }
-      remove(i) { return this.items.splice(i, 1)[0]; }
+      add(arg1, arg2) {
+        if (arg2 !== undefined) {
+          this.items.splice(arg1, 0, arg2);
+        } else {
+          this.items.push(arg1);
+        }
+        return true;
+      }
+      get(i) {
+        if (i < 0 || i >= this.items.length) {
+          throw new Error(`IndexOutOfBoundsException: Index ${i} out of bounds for length ${this.items.length}`);
+        }
+        return this.items[i];
+      }
+      set(i, x) {
+        const old = this.items[i];
+        this.items[i] = x;
+        return old;
+      }
+      remove(i) {
+        if (typeof i === 'number') {
+          return this.items.splice(i, 1)[0];
+        } else {
+          const idx = this.items.indexOf(i);
+          if (idx !== -1) {
+            this.items.splice(idx, 1);
+            return true;
+          }
+          return false;
+        }
+      }
       size() { return this.items.length; }
       isEmpty() { return this.items.length === 0; }
       contains(x) { return this.items.includes(x); }
       clear() { this.items = []; }
       indexOf(x) { return this.items.indexOf(x); }
+      lastIndexOf(x) { return this.items.lastIndexOf(x); }
+      toArray() { return [...this.items]; }
+      toString() { return 'ArrayList [' + this.items.map(formatVal).join(', ') + ']'; }
       get length() { return this.items.length; }
     }
 
-    const JavaArrays = {
-      toString: (arr) => '[' + (arr || []).join(', ') + ']',
-      sort: (arr) => { if (Array.isArray(arr)) arr.sort((a, b) => a - b); }
+    // Java Arrays Utility Tool (java.util.Arrays)
+    const Arrays = {
+      toString: (arr) => {
+        if (!arr) return 'null';
+        if (typeof arr === 'object' && arr.__isArrayList) return '[' + arr.items.map(formatVal).join(', ') + ']';
+        return '[' + (Array.isArray(arr) ? arr.map(formatVal).join(', ') : String(arr)) + ']';
+      },
+      deepToString: (arr) => JSON.stringify(arr),
+      sort: (arr) => {
+        if (Array.isArray(arr)) {
+          arr.sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))));
+        }
+      },
+      fill: (arr, val) => {
+        if (Array.isArray(arr)) arr.fill(val);
+      },
+      copyOf: (arr, newLen) => {
+        const res = new Array(newLen).fill(0);
+        for (let i = 0; i < Math.min(arr.length, newLen); i++) res[i] = arr[i];
+        return res;
+      },
+      binarySearch: (arr, key) => {
+        if (!Array.isArray(arr)) return -1;
+        let l = 0, r = arr.length - 1;
+        while (l <= r) {
+          let m = Math.floor((l + r) / 2);
+          if (arr[m] === key) return m;
+          if (arr[m] < key) l = m + 1;
+          else r = m - 1;
+        }
+        return -(l + 1);
+      },
+      asList: (...items) => new JavaArrayList(items),
+      equals: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+    };
+
+    // Java Collections Utility Tool (java.util.Collections)
+    const Collections = {
+      sort: (list) => {
+        if (list && list.__isArrayList) {
+          list.items.sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))));
+        } else if (Array.isArray(list)) {
+          list.sort((a, b) => a - b);
+        }
+      },
+      reverse: (list) => {
+        if (list && list.__isArrayList) list.items.reverse();
+        else if (Array.isArray(list)) list.reverse();
+      },
+      max: (list) => Math.max(...(list && list.__isArrayList ? list.items : list)),
+      min: (list) => Math.min(...(list && list.__isArrayList ? list.items : list)),
+      swap: (list, i, j) => {
+        const items = list && list.__isArrayList ? list.items : list;
+        const temp = items[i]; items[i] = items[j]; items[j] = temp;
+      }
+    };
+
+    // Java Wrapper Classes
+    const Integer = {
+      valueOf: (val) => {
+        const s = String(val).trim();
+        const n = parseInt(s, 10);
+        if (isNaN(n)) throw new Error(`NumberFormatException: For input string: "${val}"`);
+        return n;
+      },
+      parseInt: (val) => {
+        const s = String(val).trim();
+        const n = parseInt(s, 10);
+        if (isNaN(n)) throw new Error(`NumberFormatException: For input string: "${val}"`);
+        return n;
+      },
+      MAX_VALUE: 2147483647,
+      MIN_VALUE: -2147483648,
+      min: Math.min,
+      max: Math.max,
+      compare: (a, b) => (a < b ? -1 : (a > b ? 1 : 0)),
+      toString: (x) => String(x)
+    };
+
+    const Double = {
+      valueOf: (val) => {
+        const s = String(val).trim();
+        const n = parseFloat(s);
+        if (isNaN(n)) throw new Error(`NumberFormatException: For input string: "${val}"`);
+        return n;
+      },
+      parseDouble: (val) => {
+        const s = String(val).trim();
+        const n = parseFloat(s);
+        if (isNaN(n)) throw new Error(`NumberFormatException: For input string: "${val}"`);
+        return n;
+      },
+      MAX_VALUE: Number.MAX_VALUE,
+      MIN_VALUE: Number.MIN_VALUE,
+      isNaN: (x) => isNaN(x),
+      isInfinite: (x) => !isFinite(x)
+    };
+
+    const Float = {
+      valueOf: (val) => Double.valueOf(val),
+      parseFloat: (val) => Double.parseDouble(val)
+    };
+
+    const Long = {
+      valueOf: (val) => Integer.valueOf(val),
+      parseLong: (val) => Integer.parseInt(val),
+      MAX_VALUE: 9007199254740991,
+      MIN_VALUE: -9007199254740991
+    };
+
+    const BooleanObj = {
+      valueOf: (val) => Boolean(val === true || String(val).toLowerCase() === 'true'),
+      parseBoolean: (val) => String(val).toLowerCase() === 'true'
+    };
+
+    const Character = {
+      valueOf: (c) => String(c).charAt(0),
+      isDigit: (c) => /^\d$/.test(String(c)),
+      isLetter: (c) => /^[a-zA-Z]$/.test(String(c)),
+      isWhitespace: (c) => /^\s$/.test(String(c)),
+      toUpperCase: (c) => String(c).toUpperCase(),
+      toLowerCase: (c) => String(c).toLowerCase()
     };
 
     // Pre-processing source code lines
     const lines = sourceCode.split('\n');
     const transformed = [];
+    let scopeDepth = 1;
+    let topClassStripped = false;
+    let inClassScope = false;
+    let classDepth = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const lineNum = i + 1;
@@ -141,9 +359,47 @@ class JavaSimulator {
         continue;
       }
 
-      // Class declaration
-      if (/^(public\s+|private\s+|protected\s+)?(static\s+)?(final\s+)?class\s+(\w+)/.test(trimmed)) {
-        transformed.push(`/* L${lineNum} class */`);
+      // Top-level class declaration (only strip the very first top-level class)
+      if (!topClassStripped && /^(public\s+|private\s+|protected\s+)?(static\s+)?(final\s+)?class\s+(\w+)/.test(trimmed)) {
+        topClassStripped = true;
+        transformed.push(`/* L${lineNum} top-class */`);
+        continue;
+      }
+
+      // Inner static class (e.g. static class Student {) -> class Student {
+      const innerClassMatch = trimmed.match(/^(?:public\s+|private\s+|protected\s+)?static\s+class\s+(\w+)\s*\{/);
+      if (innerClassMatch) {
+        const clsName = innerClassMatch[1];
+        transformed.push(`class ${clsName} {`);
+        scopeDepth++;
+        inClassScope = true;
+        classDepth = scopeDepth;
+        continue;
+      }
+
+      // Fields directly inside class body: String name; int grade;
+      if (inClassScope && scopeDepth === classDepth && /^(?:String|int|double|float|boolean|long)\s+(\w+);/.test(trimmed)) {
+        const fName = trimmed.match(/^(?:String|int|double|float|boolean|long)\s+(\w+);/)[1];
+        transformed.push(`${fName} = null;`);
+        continue;
+      }
+
+      // Inner class constructor: Student(String name, int grade) { -> constructor(name, grade) {
+      const constructorMatch = trimmed.match(/^(\w+)\s*\((.*?)\)\s*\{/);
+      if (constructorMatch && /^[A-Z]/.test(constructorMatch[1])) {
+        const rawArgs = constructorMatch[2].split(',').map(a => a.trim().split(/\s+/).pop()).filter(Boolean);
+        transformed.push(`constructor(${rawArgs.join(', ')}) { recordStep(${lineNum});`);
+        scopeDepth++;
+        continue;
+      }
+
+      // Inner class method: void promote() { -> promote() {
+      const classMethodMatch = trimmed.match(/^(?:public\s+|private\s+|protected\s+)?(?:void|int|double|boolean|String)\s+(\w+)\s*\((.*?)\)\s*\{/);
+      if (classMethodMatch && !trimmed.includes('static') && classMethodMatch[1] !== 'main') {
+        const mName = classMethodMatch[1];
+        const rawArgs = classMethodMatch[2].split(',').map(a => a.trim().split(/\s+/).pop()).filter(Boolean);
+        transformed.push(`${mName}(${rawArgs.join(', ')}) { recordStep(${lineNum});`);
+        scopeDepth++;
         continue;
       }
 
@@ -159,14 +415,15 @@ class JavaSimulator {
         continue;
       }
 
-      // Method declarations: public static int fact(int n) {
+      // Standard static method declarations: public static int fact(int n) {
       const methodMatch = trimmed.match(/^(?:public\s+|private\s+|protected\s+)?static\s+(?:void|int|double|boolean|String|long)\s+(\w+)\s*\((.*?)\)\s*\{/);
       if (methodMatch && methodMatch[1] !== 'main') {
         const mName = methodMatch[1];
         const mArgs = methodMatch[2].split(',').map(a => a.trim().split(/\s+/).pop()).filter(Boolean);
         const argsStr = mArgs.join(', ');
-        let argRegs = mArgs.map(a => `regVar('${a}', 'arg', () => ${a});`).join(' ');
+        let argRegs = mArgs.map(a => `regVar('${a}', 'arg', () => ${a}, ${scopeDepth + 1});`).join(' ');
         transformed.push(`function ${mName}(${argsStr}) { callStack.push({method: '${mName}', line: ${lineNum}}); ${argRegs}`);
+        scopeDepth++;
         continue;
       }
 
@@ -188,36 +445,42 @@ class JavaSimulator {
 
       // Scanner sc = new Scanner(System.in)
       line = line.replace(/Scanner\s+(\w+)\s*=\s*new\s+Scanner\s*\(.*?\);/g, (m, v) => {
-        return `let ${v} = scanner; regVar('${v}', 'Scanner', () => '<Scanner>'); recordStep(${lineNum});`;
+        return `let ${v} = _builtinScanner; regVar('${v}', 'Scanner', () => '<Scanner>', ${scopeDepth}); recordStep(${lineNum});`;
       });
 
       // Array literals: int[] scores = {10, 25, 40, 55};
       line = line.replace(/\b([a-zA-Z0-9_]+)\[\]\s+(\w+)\s*=\s*\{([^}]+)\};/g, (m, type, v, elems) => {
-        return `let ${v} = [${elems}]; regVar('${v}', '${type}[]', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = [${elems}]; regVar('${v}', '${type}[]', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
-      // Array instantiation: int[] arr = new int[5];
+      // Array instantiation: int[] arr = new int[5]; or new int[]{...}
       line = line.replace(/\b([a-zA-Z0-9_]+)\[\]\s+(\w+)\s*=\s*new\s+\w+\[([^\]]+)\];/g, (m, type, v, sz) => {
-        return `let ${v} = new Array(${sz}).fill(0); regVar('${v}', '${type}[]', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = new Array(${sz}).fill(0); regVar('${v}', '${type}[]', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
+      });
+      line = line.replace(/\b([a-zA-Z0-9_]+)\[\]\s+(\w+)\s*=\s*new\s+\w+\[\]\s*\{([^}]+)\};/g, (m, type, v, elems) => {
+        return `let ${v} = [${elems}]; regVar('${v}', '${type}[]', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
-      // ArrayList: ArrayList<String> fruits = new ArrayList<>();
-      line = line.replace(/ArrayList\s*<.*?>\s*(\w+)\s*=\s*new\s+ArrayList\s*<.*?>\s*\(\);/g, (m, v) => {
-        return `let ${v} = new JavaArrayList(); regVar('${v}', 'ArrayList', () => ${v}); recordStep(${lineNum});`;
+      // ArrayList / List instantiation
+      line = line.replace(/\b(?:ArrayList|List)(?:\s*<.*?>)?\s+(\w+)\s*=\s*new\s+ArrayList(?:\s*<.*?>)?\s*\((.*?)\);/g, (m, v, initArg) => {
+        return `let ${v} = new JavaArrayList(${initArg || ''}); regVar('${v}', 'ArrayList', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
       // Enhanced for loop: for (int x : arr)
       line = line.replace(/for\s*\(\s*(?:int|double|long|float|String)\s+(\w+)\s*:\s*([^)]+)\)\s*\{/g, (m, v, iter) => {
-        return `for (let ${v} of ${iter}) { regVar('${v}', 'item', () => ${v}); recordStep(${lineNum});`;
+        scopeDepth++;
+        return `for (let ${v} of ${iter}) { regVar('${v}', 'item', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
       // Standard for loop: for (int i = 0; i < N; i++)
       line = line.replace(/for\s*\(\s*(?:int|double|long|float)\s+(\w+)\s*=\s*([^;]+);\s*([^;]+);\s*([^)]+)\)\s*\{/g, (m, v, init, cond, inc) => {
-        return `for (let ${v} = ${init}; recordStep(${lineNum}) && (${cond}); ${inc}) { regVar('${v}', 'int', () => ${v});`;
+        scopeDepth++;
+        return `for (let ${v} = ${init}; ((regVar('${v}', 'int', () => ${v}, ${scopeDepth}) && false) || (recordStep(${lineNum}) && (${cond}))); ${inc}) {`;
       });
 
       // While loop: while (cond) {
       line = line.replace(/while\s*\((.*?)\)\s*\{/g, (m, cond) => {
+        scopeDepth++;
         return `while (recordStep(${lineNum}) && (${cond})) {`;
       });
 
@@ -237,35 +500,66 @@ class JavaSimulator {
         });
       } else if (/(?<!else\s*)if\s*\(/.test(line)) {
         line = line.replace(/(?<!else\s*)if\s*\((.*?)\)\s*\{/g, (m, cond) => {
+          scopeDepth++;
           return `recordStep(${lineNum}); if (${cond}) {`;
         });
       }
 
+      // Break / continue
+      line = line.replace(/\b(break|continue)\s*;/g, (m, kw) => {
+        return `recordStep(${lineNum}); ${kw};`;
+      });
+
+      // Custom object instantiation: Student s = new Student("Alex", 10);
+      line = line.replace(/\b([A-Z][a-zA-Z0-9_]*)\s+(\w+)\s*=\s*new\s+\1\s*\((.*?)\);/g, (m, cls, v, args) => {
+        return `let ${v} = new ${cls}(${args}); regVar('${v}', '${cls}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
+      });
+
       // Variable declaration with assignment: int number = 1;
       line = line.replace(/\b(int|long)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
-        return `let ${v} = Math.trunc(${val}); regVar('${v}', '${type}', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = Math.trunc(${val}); regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
       line = line.replace(/\b(double|float|boolean|char|String)\s+(\w+)\s*=\s*([^;]+);/g, (m, type, v, val) => {
-        return `let ${v} = ${val}; regVar('${v}', '${type}', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = ${val}; regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
       // Variable declaration without assignment: int x;
       line = line.replace(/\b(int|double|float|long)\s+(\w+);/g, (m, type, v) => {
-        return `let ${v} = 0; regVar('${v}', '${type}', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = 0; regVar('${v}', '${type}', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
       line = line.replace(/\bboolean\s+(\w+);/g, (m, v) => {
-        return `let ${v} = false; regVar('${v}', 'boolean', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = false; regVar('${v}', 'boolean', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
       line = line.replace(/\bString\s+(\w+);/g, (m, v) => {
-        return `let ${v} = null; regVar('${v}', 'String', () => ${v}); recordStep(${lineNum});`;
+        return `let ${v} = null; regVar('${v}', 'String', () => ${v}, ${scopeDepth}); recordStep(${lineNum});`;
       });
 
       // Integer division: num /= 10 -> num = Math.trunc(num / 10)
       line = line.replace(/(\w+)\s*\/=\s*([^;]+);/g, '$1 = Math.trunc($1 / ($2));');
 
       // Standalone assignments / increments: number++; or total += scores[i];
-      if (/^\s*[a-zA-Z0-9_.]+(\+\+|--|\s*[+\-*/%]?=)/.test(line)) {
+      if (/^\s*[a-zA-Z0-9_.]+(\+\+|--|\s*[+\-*/%]?=)/.test(line) && !line.includes('recordStep(')) {
+        if (inClassScope && scopeDepth > classDepth && !line.includes('this.') && !line.includes('let ') && !line.includes('const ')) {
+          line = line.replace(/^\s*([a-zA-Z0-9_]+)(\+\+|--|\s*[+\-*/%]?=)/, 'this.$1$2');
+        }
         line = `recordStep(${lineNum}); ` + line;
+      }
+
+      // Standalone method calls: numbers.add(luku); s.promote();
+      if (/^\s*[a-zA-Z0-9_$.]+\s*\(.*?\)\s*;/.test(line) && !line.includes('recordStep(')) {
+        line = `recordStep(${lineNum}); ` + line;
+      }
+
+      // Track closing braces to clear block variables
+      if (trimmed === '}' || trimmed.startsWith('}')) {
+        scopeDepth = Math.max(1, scopeDepth - 1);
+        if (inClassScope && scopeDepth < classDepth) {
+          inClassScope = false;
+          classDepth = 0;
+          line = line + ` clearVarsAtDepth(${scopeDepth});`;
+        } else if (!inClassScope) {
+          line = line + ` clearVarsAtDepth(${scopeDepth});`;
+        }
       }
 
       transformed.push(line);
@@ -283,15 +577,40 @@ class JavaSimulator {
       const runner = new Function(
         'recordStep',
         'regVar',
+        'clearVarsAtDepth',
         'print',
         'println',
-        'scanner',
+        '_builtinScanner',
         'JavaArrayList',
-        'JavaArrays',
+        'Arrays',
+        'Collections',
+        'Integer',
+        'Double',
+        'Float',
+        'Long',
+        'Boolean',
+        'Character',
         'callStack',
         script
       );
-      runner(recordStep, regVar, print, println, scanner, JavaArrayList, JavaArrays, callStack);
+      runner(
+        recordStep,
+        regVar,
+        clearVarsAtDepth,
+        print,
+        println,
+        _builtinScanner,
+        JavaArrayList,
+        Arrays,
+        Collections,
+        Integer,
+        Double,
+        Float,
+        Long,
+        BooleanObj,
+        Character,
+        callStack
+      );
 
       // Append terminal step to reflect completed state and final output
       if (steps.length > 0) {

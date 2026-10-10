@@ -84,10 +84,30 @@ class DebuggerApp {
     this.errorMessageEl       = document.getElementById('errorMessage');
     this.errorDetailsEl       = document.getElementById('errorDetails');
     this.stdinInputEl         = document.getElementById('stdinInput');
+    this.tabVarsEl            = document.getElementById('tabVars');
+    this.tabArrayToolEl       = document.getElementById('tabArrayTool');
+    this.arrayCountBadgeEl    = document.getElementById('arrayCountBadge');
+    this.varsColumnsHeaderEl  = document.getElementById('varsColumnsHeader');
+    this.arrayToolBodyEl      = document.getElementById('arrayToolBody');
+    this.arrayToolEmptyEl     = document.getElementById('arrayToolEmpty');
+    this.arrayToolCardsEl     = document.getElementById('arrayToolCards');
+    this.formatStdinBtnEl     = document.getElementById('formatStdinBtn');
+    this.activeTab            = 'vars';
   }
 
   // -------------------------------------------------------------------------
   bindEvents() {
+    // Array Tool and Variables Tab switching
+    if (this.tabVarsEl) {
+      this.tabVarsEl.addEventListener('click', () => this.switchTab('vars'));
+    }
+    if (this.tabArrayToolEl) {
+      this.tabArrayToolEl.addEventListener('click', () => this.switchTab('arrayTool'));
+    }
+    if (this.formatStdinBtnEl) {
+      this.formatStdinBtnEl.addEventListener('click', () => this.toggleFormatStdin());
+    }
+
     // Stepping and navigation
     this.prevBtn.addEventListener('click', () => this.stepPrev());
     this.nextBtn.addEventListener('click', () => this.stepNext());
@@ -518,8 +538,10 @@ class DebuggerApp {
     this.pauseAutoPlay();
     this.clearError();
 
-    const stdinValue = stdin !== undefined ? stdin :
+    let stdinValue = stdin !== undefined ? stdin :
       (this.stdinInputEl && this.stdinInputEl.value ? this.stdinInputEl.value : '');
+
+    stdinValue = this.normalizeStdin(stdinValue, code);
 
     // 1. Check matching embedded trace
     const cleanInputCode = code.trim().replace(/\r\n/g, '\n');
@@ -648,21 +670,63 @@ class DebuggerApp {
     // 4. Update Current Frame Tag: e.g. "main:5"
     this.currentFrameTagEl.textContent = step.frame || `line ${step.line}`;
 
-    // 5. Update Variables Table
+    // 5. Update Variables Table & Array Tool
     this.variablesBodyEl.innerHTML = '';
+    const arrayVariables = [];
+    const intPointers = {};
+
     if (step.variables && step.variables.length > 0) {
+      // Find integer pointers for array cells (e.g. index, i, j, k)
+      step.variables.forEach(v => {
+        if (v.type === 'int' || v.type === 'long' || /^-?\d+$/.test(v.value)) {
+          const valNum = parseInt(v.value, 10);
+          if (!isNaN(valNum)) {
+            intPointers[v.name] = valNum;
+          }
+        }
+      });
+
       step.variables.forEach(v => {
         const row = document.createElement('div');
         row.className = 'var-row';
+
+        const isArr = this.parseArrayVariable(v);
+        if (isArr) {
+          arrayVariables.push({ varInfo: v, parsed: isArr });
+        }
+
+        let valHtml = this.escapeHtml(v.value);
+        if (isArr) {
+          valHtml = `
+            <span>${this.escapeHtml(v.value)}</span>
+            <button type="button" class="array-inspect-btn" data-var="${this.escapeHtml(v.name)}" title="Inspect in Array Tool">
+              📦 View in Array Tool
+            </button>
+          `;
+        }
+
         row.innerHTML = `
           <span class="var-name">${this.escapeHtml(v.name)}</span>
-          <span class="var-value">${this.escapeHtml(v.value)}</span>
+          <span class="var-value">${valHtml}</span>
         `;
         this.variablesBodyEl.appendChild(row);
+      });
+
+      // Bind inspect buttons
+      this.variablesBodyEl.querySelectorAll('.array-inspect-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.switchTab('arrayTool');
+          const targetCard = document.getElementById(`array-card-${btn.dataset.var}`);
+          if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth' });
+        });
       });
     } else {
       this.variablesBodyEl.innerHTML = '<div class="no-vars">(no variables in scope)</div>';
     }
+
+    // Render Array & Collection Tool Inspector
+    this.renderArrayTool(arrayVariables, intPointers);
 
     // 6. Update Call Stack (if recursive / multiple frames)
     if (step.callStack && step.callStack.length > 1) {
@@ -722,6 +786,193 @@ class DebuggerApp {
       clearInterval(this.playInterval);
       this.playInterval = null;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Array Tool & Tab Switching
+  // -------------------------------------------------------------------------
+  switchTab(tabName) {
+    this.activeTab = tabName;
+    if (tabName === 'arrayTool') {
+      if (this.tabArrayToolEl) {
+        this.tabArrayToolEl.classList.add('active');
+        this.tabArrayToolEl.setAttribute('aria-selected', 'true');
+      }
+      if (this.tabVarsEl) {
+        this.tabVarsEl.classList.remove('active');
+        this.tabVarsEl.setAttribute('aria-selected', 'false');
+      }
+      if (this.arrayToolBodyEl) this.arrayToolBodyEl.classList.remove('hidden');
+      if (this.variablesBodyEl) this.variablesBodyEl.classList.add('hidden');
+      if (this.varsColumnsHeaderEl) this.varsColumnsHeaderEl.classList.add('hidden');
+    } else {
+      if (this.tabVarsEl) {
+        this.tabVarsEl.classList.add('active');
+        this.tabVarsEl.setAttribute('aria-selected', 'true');
+      }
+      if (this.tabArrayToolEl) {
+        this.tabArrayToolEl.classList.remove('active');
+        this.tabArrayToolEl.setAttribute('aria-selected', 'false');
+      }
+      if (this.variablesBodyEl) this.variablesBodyEl.classList.remove('hidden');
+      if (this.varsColumnsHeaderEl) this.varsColumnsHeaderEl.classList.remove('hidden');
+      if (this.arrayToolBodyEl) this.arrayToolBodyEl.classList.add('hidden');
+    }
+  }
+
+  toggleFormatStdin() {
+    if (!this.stdinInputEl) return;
+    const val = this.stdinInputEl.value.trim();
+    if (!val) return;
+    if (val.includes('\n')) {
+      // Multiple lines -> convert to single line space-separated
+      const tokens = val.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      this.stdinInputEl.value = tokens.join(' ');
+    } else {
+      // Single line -> convert to multiple lines
+      const tokens = val.split(/\s+/).filter(Boolean);
+      this.stdinInputEl.value = tokens.join('\n');
+    }
+  }
+
+  normalizeStdin(stdinStr, code) {
+    if (!stdinStr || !stdinStr.trim()) {
+      const needsInput = Boolean(code.match(/\b(Scanner|System\.in|BufferedReader|readLine)\b/));
+      if (needsInput) {
+        if (code.includes('-1')) return '1\n2\n3\n-1\n';
+        return '3\n';
+      }
+      return '';
+    }
+    let cleaned = stdinStr.replace(/\\n/g, '\n');
+    const lines = cleaned.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length <= 1) {
+      const tokens = cleaned.trim().split(/[, \t]+/).filter(Boolean);
+      if (tokens.length > 1) {
+        const hasNextLine = Boolean(code.match(/\b(nextLine|readLine)\b/));
+        const allNumeric = tokens.every(t => /^-?\d+(?:\.\d+)?$/.test(t));
+        if (hasNextLine || allNumeric) {
+          cleaned = tokens.join('\n') + '\n';
+        }
+      }
+    }
+    if (!cleaned.endsWith('\n')) cleaned += '\n';
+    return cleaned;
+  }
+
+  parseArrayVariable(v) {
+    if (!v || !v.value) return null;
+    const val = v.value.trim();
+    const isArrayList = val.startsWith('ArrayList [') && val.endsWith(']');
+    const isArr = val.startsWith('[') && val.endsWith(']');
+    if (!isArrayList && !isArr && !v.type.includes('[]') && !v.type.includes('List')) return null;
+
+    let itemsStr = '';
+    let isList = false;
+    if (isArrayList) {
+      itemsStr = val.substring('ArrayList ['.length, val.length - 1).trim();
+      isList = true;
+    } else if (isArr) {
+      itemsStr = val.substring(1, val.length - 1).trim();
+    } else {
+      return null;
+    }
+
+    let elements = [];
+    if (itemsStr.length > 0) {
+      elements = itemsStr.split(/,\s*/).filter(s => s !== '');
+    }
+
+    return {
+      name: v.name,
+      type: v.type || (isList ? 'ArrayList' : 'Array'),
+      isList,
+      elements,
+      length: elements.length
+    };
+  }
+
+  renderArrayTool(arrayVariables, intPointers) {
+    if (!this.arrayToolCardsEl) return;
+
+    if (this.arrayCountBadgeEl) {
+      if (arrayVariables.length > 0) {
+        this.arrayCountBadgeEl.textContent = arrayVariables.length;
+        this.arrayCountBadgeEl.classList.remove('hidden');
+      } else {
+        this.arrayCountBadgeEl.classList.add('hidden');
+      }
+    }
+
+    if (arrayVariables.length === 0) {
+      if (this.arrayToolEmptyEl) this.arrayToolEmptyEl.classList.remove('hidden');
+      this.arrayToolCardsEl.innerHTML = '';
+      return;
+    }
+
+    if (this.arrayToolEmptyEl) this.arrayToolEmptyEl.classList.add('hidden');
+    let html = '';
+
+    arrayVariables.forEach(item => {
+      const { varInfo, parsed } = item;
+      const typeDisplay = parsed.isList ? 'ArrayList' : (varInfo.type || 'Array');
+      const sizeLabel = parsed.isList ? `size: ${parsed.length}` : `length: ${parsed.length}`;
+
+      html += `
+        <div class="array-card" id="array-card-${this.escapeHtml(varInfo.name)}">
+          <div class="array-card-header">
+            <span class="array-card-title">
+              <span class="array-card-icon">${parsed.isList ? '📋' : '🔢'}</span>
+              <span>${this.escapeHtml(varInfo.name)}</span>
+            </span>
+            <div class="array-card-meta">
+              <span class="array-type-tag">${this.escapeHtml(typeDisplay)}</span>
+              <span class="array-size-tag">${sizeLabel}</span>
+            </div>
+          </div>
+          <div class="array-cells-track">
+      `;
+
+      if (parsed.elements.length === 0) {
+        html += `<div class="empty-array-notice">Empty (${parsed.isList ? '0 elements' : 'length 0'})</div>`;
+      } else {
+        parsed.elements.forEach((elem, idx) => {
+          const matchingPointers = [];
+          for (const [pName, pVal] of Object.entries(intPointers)) {
+            if (pVal === idx) {
+              matchingPointers.push(pName);
+            }
+          }
+
+          const hasPointer = matchingPointers.length > 0;
+          const boxClass = hasPointer ? 'cell-value-box active-pointer' : 'cell-value-box';
+
+          let pointersHtml = '';
+          matchingPointers.forEach(p => {
+            pointersHtml += `<span class="pointer-pill">${this.escapeHtml(p)}</span>`;
+          });
+
+          html += `
+            <div class="array-cell-unit">
+              <span class="cell-index-label">[${idx}]</span>
+              <div class="${boxClass}" title="Index ${idx}: ${this.escapeHtml(elem)}">
+                ${this.escapeHtml(elem.replace(/^"|"$/g, ''))}
+              </div>
+              <div class="cell-pointers-list">
+                ${pointersHtml}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    this.arrayToolCardsEl.innerHTML = html;
   }
 }
 
