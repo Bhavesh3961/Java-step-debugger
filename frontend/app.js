@@ -76,9 +76,15 @@ class DebuggerApp {
     this.stepCounterEl        = document.getElementById('stepCounter');
     this.prevBtn              = document.getElementById('prevBtn');
     this.nextBtn              = document.getElementById('nextBtn');
+    this.firstBtn             = document.getElementById('firstBtn');
+    this.lastBtn              = document.getElementById('lastBtn');
     this.autoPlayBtn          = document.getElementById('autoPlayBtn');
     this.playIconEl           = document.getElementById('playIcon');
     this.runCodeBtn           = document.getElementById('runCodeBtn');
+    this.copyCodeBtn          = document.getElementById('copyCodeBtn');
+    this.copyIconEl           = document.getElementById('copyIcon');
+    this.copyTextEl           = document.getElementById('copyText');
+    this.speedSelectEl        = document.getElementById('speedSelect');
     this.exampleSelectEl      = document.getElementById('exampleSelect');
     this.errorBannerEl        = document.getElementById('errorBanner');
     this.errorMessageEl       = document.getElementById('errorMessage');
@@ -89,6 +95,7 @@ class DebuggerApp {
     this.formatStdinBtnEl     = document.getElementById('formatStdinBtn');
     this.currentTrace         = null;
     this.stdinDebounceTimer   = null;
+    this.playIntervalMs       = 700;
   }
 
   // -------------------------------------------------------------------------
@@ -112,12 +119,31 @@ class DebuggerApp {
     // Stepping and navigation
     this.prevBtn.addEventListener('click', () => this.stepPrev());
     this.nextBtn.addEventListener('click', () => this.stepNext());
+    if (this.firstBtn) this.firstBtn.addEventListener('click', () => this.stepFirst());
+    if (this.lastBtn)  this.lastBtn.addEventListener('click',  () => this.stepLast());
 
     this.stepSliderEl.addEventListener('input', (e) => {
       this.goToStep(parseInt(e.target.value, 10) - 1);
     });
 
     this.autoPlayBtn.addEventListener('click', () => this.toggleAutoPlay());
+
+    // Playback speed control
+    if (this.speedSelectEl) {
+      this.speedSelectEl.addEventListener('change', (e) => {
+        this.playIntervalMs = parseInt(e.target.value, 10);
+        // If currently playing, restart interval with new speed
+        if (this.isPlaying) {
+          clearInterval(this.playInterval);
+          this.playInterval = setInterval(() => this.stepNext(), this.playIntervalMs);
+        }
+      });
+    }
+
+    // Copy code button
+    if (this.copyCodeBtn) {
+      this.copyCodeBtn.addEventListener('click', () => this.copyCode());
+    }
 
     // Run / Visualize button
     this.runCodeBtn.addEventListener('click', () => {
@@ -162,9 +188,9 @@ class DebuggerApp {
       }
     });
 
-    // Keyboard Shortcuts (Arrow Left/Right to step, Space to play/pause)
+    // Keyboard Shortcuts (Arrow Left/Right, Home/End, Space)
     window.addEventListener('keydown', (e) => {
-      // Do not intercept arrow keys or space when typing inside the editor or inputs
+      // Do not intercept keys when typing inside the editor or inputs
       if (['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName)) {
         return;
       }
@@ -175,6 +201,12 @@ class DebuggerApp {
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         this.stepNext();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        this.stepFirst();
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        this.stepLast();
       } else if (e.key === ' ') {
         e.preventDefault();
         this.toggleAutoPlay();
@@ -717,6 +749,8 @@ class DebuggerApp {
     // 9. Update Navigation Buttons state
     this.prevBtn.disabled = (index === 0);
     this.nextBtn.disabled = (index === this.steps.length - 1);
+    if (this.firstBtn) this.firstBtn.disabled = (index === 0);
+    if (this.lastBtn)  this.lastBtn.disabled  = (index === this.steps.length - 1);
 
     // 10. Check if current step line asks for input & flash input box
     this.checkAndHighlightInputLine(step, index);
@@ -735,6 +769,45 @@ class DebuggerApp {
     }
   }
 
+  stepFirst() {
+    this.pauseAutoPlay();
+    this.goToStep(0);
+  }
+
+  stepLast() {
+    this.pauseAutoPlay();
+    this.goToStep(this.steps.length - 1);
+  }
+
+  copyCode() {
+    const code = this.codeEditorEl.value || this.sourceCode || '';
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      if (this.copyIconEl) this.copyIconEl.textContent = '✅';
+      if (this.copyTextEl) this.copyTextEl.textContent = 'Copied!';
+      setTimeout(() => {
+        if (this.copyIconEl) this.copyIconEl.textContent = '📋';
+        if (this.copyTextEl) this.copyTextEl.textContent = 'Copy';
+      }, 2000);
+    }).catch(() => {
+      // Fallback for environments without clipboard API
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (this.copyIconEl) this.copyIconEl.textContent = '✅';
+      if (this.copyTextEl) this.copyTextEl.textContent = 'Copied!';
+      setTimeout(() => {
+        if (this.copyIconEl) this.copyIconEl.textContent = '📋';
+        if (this.copyTextEl) this.copyTextEl.textContent = 'Copy';
+      }, 2000);
+    });
+  }
+
   toggleAutoPlay() {
     this.isPlaying ? this.pauseAutoPlay() : this.startAutoPlay();
   }
@@ -743,7 +816,7 @@ class DebuggerApp {
     if (this.currentStep >= this.steps.length - 1) this.goToStep(0);
     this.isPlaying = true;
     this.playIconEl.textContent = '⏸';
-    this.playInterval = setInterval(() => this.stepNext(), 700);
+    this.playInterval = setInterval(() => this.stepNext(), this.playIntervalMs || 700);
   }
 
   pauseAutoPlay() {

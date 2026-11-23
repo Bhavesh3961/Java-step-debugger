@@ -569,6 +569,11 @@ class JavaSimulator {
       // Integer division: num /= 10 -> num = Math.trunc(num / 10)
       line = line.replace(/(\w+)\s*\/=\s*([^;]+);/g, '$1 = Math.trunc($1 / ($2));');
 
+      // Integer division in standard reassignment (e.g. num = num / 10;): preserves integer truncation
+      line = line.replace(/^(\s*)([a-zA-Z0-9_]+)\s*=\s*([^;]*\/[^;]+);/g, (m, indent, varName, expr) => {
+        return `${indent}${varName} = (typeof ${varName} === 'number' && Number.isInteger(${varName})) ? Math.trunc(${expr}) : (${expr});`;
+      });
+
       // Standalone assignments / increments: number++; or total += scores[i];
       if (/^\s*[a-zA-Z0-9_.]+(\+\+|--|\s*[+\-*/%]?=)/.test(line) && !line.includes('recordStep(')) {
         if (inClassScope && scopeDepth > classDepth && !line.includes('this.') && !line.includes('let ') && !line.includes('const ')) {
