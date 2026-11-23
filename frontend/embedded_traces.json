@@ -6201,5 +6201,1673 @@
       }
     ],
     "totalSteps": 25
+  },
+  "binary_search": {
+    "title": "Binary Search (DSA Algorithm)",
+    "code": "public class BinarySearch {\n    public static void main(String[] args) {\n        int[] arr = {2, 5, 8, 12, 16, 23, 38, 56};\n        int target = 16;\n        int left = 0;\n        int right = arr.length - 1;\n        int found = -1;\n\n        while (left <= right) {\n            int mid = (left + right) / 2;\n            if (arr[mid] == target) {\n                found = mid;\n                break;\n            } else if (arr[mid] < target) {\n                left = mid + 1;\n            } else {\n                right = mid - 1;\n            }\n        }\n        System.out.println(\"Found at index: \" + found);\n    }\n}",
+    "defaultStdin": "",
+    "steps": [
+      {
+        "step": 1,
+        "line": 3,
+        "frame": "main:3",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 3
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 2,
+        "line": 4,
+        "frame": "main:4",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 4
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 3,
+        "line": 5,
+        "frame": "main:5",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 5
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 4,
+        "line": 6,
+        "frame": "main:6",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 6
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 5,
+        "line": 7,
+        "frame": "main:7",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 7
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 6,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 7,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "3"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 8,
+        "line": 11,
+        "frame": "main:11",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 11
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "3"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 9,
+        "line": 14,
+        "frame": "main:14",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 14
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "3"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 10,
+        "line": 15,
+        "frame": "main:15",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 15
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "3"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 11,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 12,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "5"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 13,
+        "line": 11,
+        "frame": "main:11",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 11
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "5"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 14,
+        "line": 14,
+        "frame": "main:14",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 14
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "5"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 15,
+        "line": 16,
+        "frame": "main:16",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 16
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "5"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 16,
+        "line": 17,
+        "frame": "main:17",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 17
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "7"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 17,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 18,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "4"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 19,
+        "line": 11,
+        "frame": "main:11",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 11
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "4"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 20,
+        "line": 12,
+        "frame": "main:12",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 12
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "-1"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "4"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 21,
+        "line": 13,
+        "frame": "main:13",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 13
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "mid",
+            "type": "int",
+            "value": "4"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 22,
+        "line": 20,
+        "frame": "main:20",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 20
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "4"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 23,
+        "line": 22,
+        "frame": "main:22",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 22
+          }
+        ],
+        "variables": [
+          {
+            "name": "arr",
+            "type": "int[]",
+            "value": "[2, 5, 8, 12, 16, 23, 38, 56]"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "value": "16"
+          },
+          {
+            "name": "left",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "right",
+            "type": "int",
+            "value": "4"
+          },
+          {
+            "name": "found",
+            "type": "int",
+            "value": "4"
+          }
+        ],
+        "output": "Found at index: 4\n"
+      }
+    ]
+  },
+  "palindrome_check": {
+    "title": "Palindrome Number (Loop & Arithmetic)",
+    "code": "public class PalindromeCheck {\n    public static void main(String[] args) {\n        int num = 1221;\n        int original = num;\n        int reversed = 0;\n\n        while (num > 0) {\n            int digit = num % 10;\n            reversed = reversed * 10 + digit;\n            num = num / 10;\n        }\n\n        boolean isPalindrome = (original == reversed);\n        System.out.println(\"Is Palindrome: \" + isPalindrome);\n    }\n}",
+    "defaultStdin": "",
+    "steps": [
+      {
+        "step": 1,
+        "line": 3,
+        "frame": "main:3",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 3
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 2,
+        "line": 4,
+        "frame": "main:4",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 4
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 3,
+        "line": 5,
+        "frame": "main:5",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 5
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "0"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 4,
+        "line": 7,
+        "frame": "main:7",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 7
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "0"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 5,
+        "line": 8,
+        "frame": "main:8",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 8
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 6,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 7,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 8,
+        "line": 7,
+        "frame": "main:7",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 7
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 9,
+        "line": 8,
+        "frame": "main:8",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 8
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 10,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 11,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 12,
+        "line": 7,
+        "frame": "main:7",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 7
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 13,
+        "line": 8,
+        "frame": "main:8",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 8
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 14,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 15,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "12"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 16,
+        "line": 7,
+        "frame": "main:7",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 7
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "2"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 17,
+        "line": 8,
+        "frame": "main:8",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 8
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 18,
+        "line": 9,
+        "frame": "main:9",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 9
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "122"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 19,
+        "line": 10,
+        "frame": "main:10",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 10
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "1"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 20,
+        "line": 7,
+        "frame": "main:7",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 7
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "digit",
+            "type": "int",
+            "value": "1"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 21,
+        "line": 13,
+        "frame": "main:13",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 13
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "isPalindrome",
+            "type": "boolean",
+            "value": "true"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 22,
+        "line": 14,
+        "frame": "main:14",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 14
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "isPalindrome",
+            "type": "boolean",
+            "value": "true"
+          }
+        ],
+        "output": ""
+      },
+      {
+        "step": 23,
+        "line": 16,
+        "frame": "main:16",
+        "callStack": [
+          {
+            "method": "main",
+            "line": 16
+          }
+        ],
+        "variables": [
+          {
+            "name": "num",
+            "type": "int",
+            "value": "0"
+          },
+          {
+            "name": "original",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "reversed",
+            "type": "int",
+            "value": "1221"
+          },
+          {
+            "name": "isPalindrome",
+            "type": "boolean",
+            "value": "true"
+          }
+        ],
+        "output": "Is Palindrome: true\n"
+      }
+    ]
   }
 }

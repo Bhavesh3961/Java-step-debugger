@@ -25,6 +25,9 @@
           <option value="">— Pick an example —</option>
           <!-- Populated dynamically from embedded_traces.json -->
         </select>
+        <button id="copyCodeBtn" class="btn btn-secondary" title="Copy code to clipboard">
+          <span class="btn-icon" id="copyIcon">📋</span> <span id="copyText">Copy</span>
+        </button>
         <a href="about.html" class="btn btn-secondary" style="text-decoration:none;">
           <span class="btn-icon">ℹ️</span> About
         </a>
@@ -125,27 +128,46 @@
 
         <!-- Navigation Buttons & Step Indicator -->
         <div class="buttons-row">
-          <button id="prevBtn" class="btn btn-step" title="Previous Step (Left Arrow)">
-            Prev
-          </button>
+          <div class="btn-step-group">
+            <button id="firstBtn" class="btn btn-step btn-step-jump" title="First Step (Home)">
+              ⏮ First
+            </button>
+            <button id="prevBtn" class="btn btn-step" title="Previous Step (Left Arrow)">
+              ◀ Prev
+            </button>
+          </div>
           
           <div class="step-counter-wrapper">
             <span id="stepCounter" class="step-counter">1 / 1</span>
-            <button id="autoPlayBtn" class="btn-play-pause" title="Auto Play / Pause">
+            <button id="autoPlayBtn" class="btn-play-pause" title="Auto Play / Pause (Space)">
               <span id="playIcon">⏵</span>
             </button>
+            <div class="speed-control" title="Auto-Play Speed">
+              <label for="speedSelect" class="speed-label">Speed:</label>
+              <select id="speedSelect" class="speed-select">
+                <option value="1400">0.5x</option>
+                <option value="700" selected>1x</option>
+                <option value="350">2x</option>
+                <option value="180">4x</option>
+              </select>
+            </div>
           </div>
 
-          <button id="nextBtn" class="btn btn-step" title="Next Step (Right Arrow)">
-            Next
-          </button>
+          <div class="btn-step-group">
+            <button id="nextBtn" class="btn btn-step" title="Next Step (Right Arrow)">
+              Next ▶
+            </button>
+            <button id="lastBtn" class="btn btn-step btn-step-jump" title="Last Step (End)">
+              Last ⏭
+            </button>
+          </div>
         </div>
       </section>
     </main>
 
     <!-- Footer shortcut hint -->
     <footer class="app-footer">
-      <span>Type or paste directly in code box • <kbd>Tab</kbd> to indent • <kbd>←</kbd> <kbd>→</kbd> to step • <kbd>Space</kbd> play/pause • <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> to Visualize</span>
+      <span>Type or paste directly in code box • <kbd>Tab</kbd> indent • <kbd>←</kbd> <kbd>→</kbd> step • <kbd>Home</kbd> / <kbd>End</kbd> start/end • <kbd>Space</kbd> play/pause • <kbd>Ctrl+Enter</kbd> Visualize</span>
     </footer>
   </div>
 
